@@ -208,7 +208,7 @@ class VRML2Export:
 		self.file.write("# Blender version %s\n" % Blender.Get('version'))
 		self.file.write("# Blender file %s\n" % sys.basename(bfile))
 		self.file.write("# Exported using VRML97 exporter " \
-						"v1.55 (2006/01/17)\n\n")
+						"v1.55-kambi1\n\n")
 
 	def writeInline(self):
 		inlines = Blender.Scene.Get()
@@ -460,6 +460,13 @@ class VRML2Export:
 					self.collnode = 1
 				if (face.mode & Mesh.FaceModes['TWOSIDE']):
 					self.twosided = 1
+		else:
+			# Kambi* : if mesh doesn't have UV face, it seems
+			# not possible to test for TWOSIDE. So we set twosided
+			# to 1, as this is safer (although possibly slower
+			# to render by VRML browser). Otherwise everything
+			# not textured would be forced to have only one side.
+			self.twosided = 1
 
 		# Bit of a crufty trick, but if mesh has vertex colors
 		# (as a non-face property) and if first material has
