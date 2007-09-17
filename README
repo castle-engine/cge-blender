@@ -1,0 +1,8 @@
+This directory contains various utilities related to using Blender
+together with Kambi VRML game engine. Right now:
+
+- kambi_vrml97_export.py: customized version of vrml97_export.py
+  script (included in Blender since some version). Various customizations
+  to improve exporting VRML 2.0 models, search for "Kambi" string inside
+  to know more.
+  May not work with Blender < 2.44.
