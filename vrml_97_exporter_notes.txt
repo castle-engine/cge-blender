@@ -1,0 +1,79 @@
+Various comments about usage of VRML 97 Blender exporter,
+both my version (in this directory, kambi_vrml97_export.py)
+and the version distributed with Blender.
+
+------------------------------------------------------------------------------
+
+- Texture is ignored if vertex painting was used.
+  I guess that's because of VRML 2.0 feature that says that Texture RGB should
+  make Color field ignored. This somewhat prevents using both vertex painting
+  and texturing on one node (actually, not really, but I guess it's not
+  easy to workaround for Blender exporter).
+
+  Be sure to remove "Vertex colors" from mesh and "VCol Paint" from material
+  if you want to see texture applied on the mesh.
+
+- It exports lights to VRML file. This is actually a very good thing,
+  although it's something different if you were used to the fact
+  that VRML 1.0 exporter doesn't touch the lights.
+  Be sure to set lights the way how you want them for VRML.
+
+  Although, there's a bug: DirectionalLight is set in stupid way
+  that will not affect anything. (it's inside Transform grouping node).
+
+- It exports camera for VRML file using correct way.
+  VRML 1.0 exporter also exported camera but using brain-dead
+  way (it just transformed whole scene to match camera...).
+  So now you should just set your camera right for VRML file.
+
+  Well, gravityUp is still stupid (it's always equal to cameraUp,
+  which is not always what's needed). You may want to correct by
+  view3dscene "Navigation -> Walk mode settings -> Change gravity up..."
+  and then "Console -> Print Current Camera Node (VRML 2.0)"
+  and add generated camera node to VRML file.
+
+- It sets "solid" field of IndexedFaceSet (VRML browsers can do
+  backface culling if this is TRUE) by looking at
+  twosided property of geometry. So be sure to set this right in
+  blender.
+
+- It generated IndexedLineSet when the mesh drawing type
+  is set to Wireframe in blender, but this is a little buggy:
+  last index on each face is not connected with the first.
+  I corrected this by regexp replace:
+          \([0-9]+\) \(.*\) -1,
+  to
+          \1 \2 \1 -1,
+
+- Beware that Camera visibilityLimit is exported.
+  If you don't see anything on the scene in view3dscene Examine mode
+  and in Walk mode you see only nearest parts, then probably your
+  visibilityLimit is too small.
+
+------------------------------------------------------------------------------
+Things fixed in my version:
+
+- Original exporter uses texture object name in Blender as texture URL.
+  I don't know why. Fixed in my version, to obviously take texture
+  filename.
+
+- Original version rotates object so that +Z becomes +Y.
+
+  Which is smart if you try hard to conform to VRML 2.0 rule that +Y
+  is up and you like to design in Blender with +Z up... Actually, it's
+  stupid as fas as I (Kambi) am concerned. I prefer exporter that tries
+  to preserve as accurately as possible in VRML what I did in Blender.
+  If I wanted +Y up, I would design in Blender with +Y up.
+
+  The rule that "+Y is up" is not important in VRML --- you can set
+  your camera such that gravityUp and up are +Z, if you want.
+  Everything will work 100% correctly (until you will want to mix with
+  models that have +Y up). Also. it's only usual in Blender to design
+  with +Z up --- you can design in Blender with anything as "up".
+
+  I understand that it's just a matter of preference. But my preference
+  is strong in this case: I want to preserve X, Y, Z from Blender to VRML
+  accurately. Conventions "what's up vector" are much less important then
+  that.
+
+  So in my exporter version this "feature" is removed.

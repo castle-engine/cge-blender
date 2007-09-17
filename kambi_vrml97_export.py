@@ -447,7 +447,13 @@ class VRML2Export:
 				if (face.mode & Mesh.FaceModes['OBCOL']):
 					self.facecolors = 1
 				if (face.mode & Mesh.FaceModes['SHAREDCOL']):
-					self.vcolors = 1
+					# Kambi: i don't know why, but on castle.blend
+					# I have SHAREDCOL here, but vertex colors don't
+					# exist and script fails with
+					# ValueError: face has no vertex colors.
+					# This is an ugly workaround.
+					if os.path.basename(Blender.Get('filename')) <> 'castle.blend':
+						self.vcolors = 1
 				if (face.mode & Mesh.FaceModes['TILES']):
 					self.tilenode = 1
 				if not (face.mode & Mesh.FaceModes['DYNAMIC']):
@@ -862,8 +868,11 @@ class VRML2Export:
 		else:
 			self.writeIndented("texture DEF %s ImageTexture {\n" % \
 							   self.cleanStr(name), 1)
-			self.writeIndented('url "%s"\n' % \
-							   name.split("\\")[-1].split("/")[-1])
+			# Kambi* : originally url was taken from last part of name,
+			# which seems stupid... url, naturally, should come from
+			# texture filename. Filename may be even relative with some path
+			# prefix, that's good.
+			self.writeIndented('url "%s"\n' % Image.Get(name).getFilename())
 			self.writeIndented("}\n",-1)
 			self.texNames[name] = 1
 
