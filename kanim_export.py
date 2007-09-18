@@ -90,10 +90,25 @@ def select_file(filename):
 	if filename.endswith(animextension):
 		filename=filename.rsplit('.',1)[0]
 
+	# Output kanim file first (before importing gzip module)
+	animfile = open (filename + animextension,'w')
+	print >> animfile, '<?xml version="1.0"?>'
+	print >> animfile, '<animation scenes_per_time="' + str(context.framesPerSec())+'" optimization="separate-shape-states-no-transform" equality_epsilon="0.001" loop="false" backwards="false" >'
+
+	for frame in range(sFrame, eFrame+1):
+		print >> animfile, '<frame file_name="'+os.path.basename(filename)+str(frame)+extension+'" time="'+str(1.0/context.framesPerSec()*(frame-1))+'" />'
+
+	print >> animfile, '</animation>'
+
+	# Import gzip module if compressed VRML is wanted
+	if ARG == 'comp':
+		from gzip import *
+
+	# Output VRML for each frame
 	for frame in range(sFrame, eFrame+1):
 		Blender.Set('curframe', frame)
 		Blender.Redraw()
-		scene = Blender.Scene.getCurrent()
+		scene = Blender.Scene.GetCurrent()
 		world = Blender.World.GetCurrent()
 		worldmat = Blender.Texture.Get()
 
@@ -105,16 +120,7 @@ def select_file(filename):
 		wrlexport.ARG=ARG
 		wrlexport.export()
 
-	animfile = open (filename + animextension,'w')
-	print >> animfile, '<?xml version="1.0"?>'
-	print >> animfile, '<animation scenes_per_time="' + str(context.framesPerSec())+'" optimization="separate-shape-states-no-transform" equality_epsilon="0.001" loop="false" backwards="false" >'
-
-	for frame in range(sFrame, eFrame+1):
-		print >> animfile, '<frame file_name="'+os.path.basename(filename)+str(frame)+extension+'" time="'+str(1.0/context.framesPerSec()*(frame-1))+'" />'
-
-
-
-	print >> animfile, '</animation>'
+	# Back to frame where user was
 	Blender.Set('curframe', oFrame)
 	Blender.Redraw()
 
@@ -134,7 +140,6 @@ if Blender.Get('version') < 235:
 else:
 	if ARG == 'comp':
 		extension=".wrz"
-		from gzip import *
 	else:
 		extension=".wrl"
 	Blender.Window.FileSelector(select_file, "Export Kambi VRML engine's animations", \

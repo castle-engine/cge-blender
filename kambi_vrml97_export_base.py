@@ -92,7 +92,7 @@ class VRML2Export:
 		# Kambi* moved all needed global variables of this script into
 		# VRML2Export class.
 		# This makes it reusable from kambi_vrml97_export and kanim_export.
-		self.scene = Blender.Scene.getCurrent()
+		self.scene = Blender.Scene.GetCurrent()
 		self.world = Blender.World.GetCurrent() 
 		self.worldmat = Blender.Texture.Get()
 		self.ARG=''

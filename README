@@ -5,9 +5,13 @@ together with Kambi VRML game engine. Right now:
   script (included in Blender since some version). Various customizations
   to improve exporting VRML 2.0 models: some fixes, also some ugly
   hacks when unfortunately needed, search for "Kambi" string inside
-  to know more.
+  to know more. It's actual content is inside kambi_vrml97_export_base.py,
+  to be shared by kanim_export.py.
   May not work with Blender < 2.44.
+
+- kanim_export.py exporter to kanim format, along with referenced VRML files.
+  See [http://vrmlengine.sourceforge.net/kanim_format.php] about kanim format.
 
 - vrml_97_exporter_notes.txt: some notes possibly important for
   anyone who exports VRML 2.0 from Blender. Also explain some
-  reasoning behind changes in kambi_vrml97_export.py.
+  reasoning behind changes in kambi_vrml97_export[_base].py.
