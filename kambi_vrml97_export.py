@@ -69,8 +69,7 @@ def select_file(filename):
 	if not filename.endswith(extension):
 		filename += extension
 
-	wrlexport=VRML2Export(filename)
-	wrlexport.ARG=ARG
+	wrlexport=VRML2Export(filename, ARG)
 	wrlexport.export()
 
 
@@ -90,7 +89,6 @@ if Blender.Get('version') < 235:
 else:
 	if ARG == 'comp':
 		extension=".wrz"
-		from gzip import *
 	else:
 		extension=".wrl"
 	Blender.Window.FileSelector(select_file, "Export VRML97", \

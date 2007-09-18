@@ -88,7 +88,7 @@ def select_file(filename):
 	if filename.endswith(animextension):
 		filename=filename.rsplit('.',1)[0]
 
-	# Output kanim file first (before importing gzip module)
+	# Output kanim file
 	animfile = open (filename + animextension,'w')
 	print >> animfile, '<?xml version="1.0"?>'
 	print >> animfile, '<animation scenes_per_time="' + str(context.framesPerSec())+'" optimization="separate-shape-states-no-transform" equality_epsilon="0.001" loop="false" backwards="false" >'
@@ -97,10 +97,6 @@ def select_file(filename):
 		print >> animfile, '<frame file_name="'+os.path.basename(filename)+str(frame)+extension+'" time="'+str(1.0/context.framesPerSec()*(frame-1))+'" />'
 
 	print >> animfile, '</animation>'
-
-	# Import gzip module if compressed VRML is wanted
-	if ARG == 'comp':
-		from gzip import *
 
 	# Output VRML for each frame
 	for frame in range(sFrame, eFrame+1):
@@ -114,8 +110,7 @@ def select_file(filename):
 		ffilename+=str(frame)
 		ffilename+= extension
 
-		wrlexport=VRML2Export(ffilename)
-		wrlexport.ARG=ARG
+		wrlexport=VRML2Export(ffilename, ARG)
 		wrlexport.export()
 
 	# Back to frame where user was

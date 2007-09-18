@@ -65,6 +65,11 @@ import os
 # 							   [0,1,0,0], \
 # 							   [0,0,0,1])
 
+# Kambi: gzipOpen, for use when compressed output requested.
+# This is much safer than original approach with "from gzip import *"
+# to override "open" identifier.
+from gzip import open as gzipOpen
+
 class DrawTypes:
 	"""Object DrawTypes enum values
     BOUNDS - draw only the bounding box of the object
@@ -86,7 +91,7 @@ if not hasattr(Blender.Object,'DrawTypes'):
 ##########################################################
 
 class VRML2Export:
-	def __init__(self, filename):
+	def __init__(self, filename, ARG):
 		#--- public you can change these ---
 		
 		# Kambi* moved all needed global variables of this script into
@@ -95,7 +100,7 @@ class VRML2Export:
 		self.scene = Blender.Scene.GetCurrent()
 		self.world = Blender.World.GetCurrent() 
 		self.worldmat = Blender.Texture.Get()
-		self.ARG=''
+		self.ARG=ARG
 		
 		self.wire = 0
 		self.proto = 1
@@ -134,7 +139,11 @@ class VRML2Export:
 		self.coordNames={}   # dictionary of coordNames
 		self.indentLevel=0 # keeps track of current indenting
 		self.filename=filename
-		self.file = open(filename, "w")
+
+		if ARG == 'comp':
+			self.file = gzipOpen(filename, "w")
+		else:
+			self.file = open(filename, "w")
 		self.bNav=0
 		self.nodeID=0
 		self.namesReserved=[ "Anchor", "Appearance", "AudioClip",
