@@ -23,11 +23,9 @@ want to export only selected or all relevant objects.
 
 Implementation details:
 
-This script calls single-file VRML 97 export in file kambi_vrml97_export.py
-(you can also change it to use original vrml97_export.py, this should also work
-perfectly). I.e. it imports classes and needed global variabless
-from kambi_vrml97_export and uses actual VRML2Export class to do the export.
-This way changes to kambi_vrml97_export are automatically used by this script.
+This script uses VRML 97 export class in file kambi_vrml97_export_base.py.
+This way changes to kambi_vrml97_export_base.py are shared by this
+script as well as by single-file exporter in kambi_vrml97_export.py script.
 """
 
 # ***** BEGIN GPL LICENSE BLOCK *****

@@ -23,6 +23,12 @@ Usage:
 
 Run this script from "File->Export" menu.  A pop-up will ask whether you
 want to export only selected or all relevant objects.
+
+Implementation details:
+
+This script uses VRML 97 export class in file kambi_vrml97_export_base.py.
+This way changes to kambi_vrml97_export_base.py are shared by this
+script as well as by single-file exporter in kambi_vrml97_export.py script.
 """
 
 ####################################
