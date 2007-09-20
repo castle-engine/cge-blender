@@ -54,8 +54,12 @@ and the version distributed with Blender.
 Things fixed in my version:
 
 - Original exporter uses texture object name in Blender as texture URL.
-  I don't know why. Fixed in my version, to obviously take texture
-  filename.
+  I don't know why. Update: this was about Blender <= 2.44.
+  In Blender 2.45 it's fixed to use filename, but still strips path from
+  filename without any reason (I like to have (possibly relative) path
+  there.)
+
+  Fixed in my version, to just insert texture filename.
 
 - Original version rotates object so that +Z becomes +Y.
 
