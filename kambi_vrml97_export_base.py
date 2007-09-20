@@ -249,9 +249,15 @@ class VRML2Export:
 						   (self.cleanStr(thisObj.name)), 1)
 		self.writeIndented('description "%s" \n' % thisObj.name)
 		self.writeIndented("position 0.0 0.0 0.0\n")
+		
+		# Kambi- this: since I removed the hack to transform VRML files
+		# to +Y from +Z, this orientation below is also removed,
+		# default VRML camera orientation is OK.
+		#
 		# Need camera to point to -y in local space to accomodate
 		# the transforma node above
-		self.writeIndented("orientation 1.0 0.0 0.0 %f\n" % (-math.pi/2.0))
+		# self.writeIndented("orientation 1.0 0.0 0.0 %f\n" % (-math.pi/2.0))
+		
 		self.writeIndented("fieldOfView %.3f\n" % (lens))
 		self.writeIndented("}\n", -1)
 		self.writeIndented("\n")
@@ -280,6 +286,7 @@ class VRML2Export:
 
 	def writeNavigationInfo(self):
 		# Kambi- removed scene parameter, use self.scene field consistently.
+		
 		allObj = []
 		allObj = list(self.scene.objects)
 		headlight = "TRUE"
@@ -864,11 +871,13 @@ class VRML2Export:
 		else:
 			self.writeIndented("texture DEF %s ImageTexture {\n" % \
 							   self.cleanStr(name), 1)
+			
 			# Kambi* : originally url was taken from last part of name,
 			# which seems stupid... url, naturally, should come from
 			# texture filename. Filename may be even relative with some path
 			# prefix, that's good.
 			self.writeIndented('url "%s"\n' % Image.Get(name).getFilename())
+			
 			self.writeIndented("}\n",-1)
 			self.texNames[name] = 1
 
@@ -884,10 +893,12 @@ class VRML2Export:
 		sky0, sky1, sky2 = sky[0], sky[1], sky[2]
 		mix0, mix1, mix2 = grd[0]+sky[0], grd[1]+sky[1], grd[2]+sky[2]
 		mix0, mix1, mix2 = mix0/2, mix1/2, mix2/2
+		
 		# Kambi fixes here:
 		# - There shall be one more skyColor value than there are skyAngle values.
 		# - There shall be one more groundColor value than there are groundAngle values.
 		# (quoting VRML 97 spec)
+		
 		if worldname in self.namesStandard:
 			self.writeIndented("Background {\n",1)
 		else:
