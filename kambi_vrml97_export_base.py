@@ -703,14 +703,20 @@ class VRML2Export:
 			else:
 				self.writeIndented("solid TRUE\n")
 
-		# Kambi+: ugly hack to write creaseAngle for humanoid model
-		# in the rift.
+		# Kambi+: ugly hack to write creaseAngle for some models.
 		if os.path.basename(Blender.Get('filename')) == 'temp_humanoid.blend':
 			print "Kambi: special humanoid.blend behavior"
 			if ob.getData(False, True).name == 'Foot' or ob.getData(False, True).name == 'Foot.001':
 				self.writeIndented("creaseAngle 0\n")
 			else:
 				self.writeIndented("creaseAngle 4 # > Pi, completely smooth\n")
+
+		if os.path.basename(Blender.Get('filename')) == 'fountain.blend':
+			print "Kambi: special fountain.blend behavior"
+			if ob.getData(False, True).name == 'Column':
+				self.writeIndented("creaseAngle 0.5235987756 # Pi / 6 = 30 degrees\n")
+			else:
+				pass
 
 		self.writeCoordinates(me, meshName)
 		self.writeCoordIndex(me, meshName, matnum, image)
