@@ -717,8 +717,8 @@ class VRML2Export:
 			if ob.getData(False, True).name == 'Column' or \
 			   ob.getData(False, True).name == 'Fountain':
 				self.writeIndented("creaseAngle 0.5235987756 # Pi / 6 = 30 degrees\n")
-			else:
-				pass
+			elif ob.name == 'FountainCore':
+				self.writeIndented("creaseAngle 4 # > Pi, completely smooth\n")
 
 		self.writeCoordinates(me, meshName)
 		self.writeCoordIndex(me, meshName, matnum, image)
