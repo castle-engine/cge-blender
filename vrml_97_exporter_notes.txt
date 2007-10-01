@@ -12,6 +12,8 @@ and the version distributed with Blender.
 
   Be sure to remove "Vertex colors" from mesh and "VCol Paint" from material
   if you want to see texture applied on the mesh.
+  
+  And be sure to set "TexFace" for material to take texture.
 
 - It exports lights to VRML file. This is actually a very good thing,
   although it's something different if you were used to the fact
