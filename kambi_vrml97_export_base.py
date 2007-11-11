@@ -434,6 +434,8 @@ class VRML2Export:
 		self.tilenode = 0
 		self.colnode = 0
 		self.wire = 0
+		# Kambi* fix: self.twosided should be reset here
+		self.twosided = 0 
 		if me.faceUV:
 			for face in me.faces:
 				if (face.mode & Mesh.FaceModes['HALO']):
