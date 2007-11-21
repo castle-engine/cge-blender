@@ -714,9 +714,18 @@ class VRML2Export:
 			else:
 				self.writeIndented("creaseAngle 4 # > Pi, completely smooth\n")
 
-		if os.path.basename(Blender.Get('filename')) == 'fountain.blend':
+		if os.path.basename(Blender.Get('filename')) == 'fountain.blend' or os.path.basename(Blender.Get('filename')) == 'temp_fountain_bumpdemo.blend':
 			print "Kambi: special fountain.blend behavior"
 			if ob.getData(False, True).name == 'Column' or \
+			   ob.getData(False, True).name == 'Column.001' or \
+			   ob.getData(False, True).name == 'Column.002' or \
+			   ob.getData(False, True).name == 'Column.003' or \
+			   ob.getData(False, True).name == 'Column.004' or \
+			   ob.getData(False, True).name == 'Column.005' or \
+			   ob.getData(False, True).name == 'Column.006' or \
+			   ob.getData(False, True).name == 'Column.007' or \
+			   ob.getData(False, True).name == 'Column.008' or \
+			   ob.getData(False, True).name == 'Column.009' or \
 			   ob.getData(False, True).name == 'Fountain':
 				self.writeIndented("creaseAngle 0.5235987756 # Pi / 6 = 30 degrees\n")
 			elif ob.name == 'FountainCore':
