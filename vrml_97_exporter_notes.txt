@@ -12,7 +12,7 @@ and the version distributed with Blender.
 
   Be sure to remove "Vertex colors" from mesh and "VCol Paint" from material
   if you want to see texture applied on the mesh.
-  
+
   And be sure to set "TexFace" for material to take texture.
 
 - It exports lights to VRML file. This is actually a very good thing,
@@ -54,6 +54,25 @@ and the version distributed with Blender.
 
 ------------------------------------------------------------------------------
 Things fixed in my version:
+
+- Original exported doesn't care about smooth/solid/autosmooth etc., resulting
+  in all objects being solid (flat shading).
+
+  Our version respects set solid/set smooth/autosmooth/autosmooth degrees
+  settings from Blender are correctly exports them to VRML file (as creaseAngle
+  field). So objects markred as solid are solid, objects marked as smooth
+  are fully smooth (if autosmooth off) or are smoothed according to
+  autosmooth degree (if autosmooth on).
+
+  The only case when this algorithm fails is when you used set smooth/set solid
+  on only particular mesh parts. That is, if within one mesh, some faces
+  are marked solid and some are marked smooth. Current implementation
+  will treat this like every face was marked smooth.
+  (This case cannot be handled by creaseAngle, it requires splitting the
+  mesh into two parts for exporting or writing explicit calculated normals
+  in VRML file.)
+  (That said, this is not often found case, as on 99% of models you can get good
+  normals using smooth with autosmooth adjusted.)
 
 - Original exporter uses texture object name in Blender as texture URL.
   I don't know why. Update: this was about Blender <= 2.44.

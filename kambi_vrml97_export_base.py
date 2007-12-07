@@ -481,6 +481,54 @@ class VRML2Export:
 			# user selected WIRE=2 on the Drawtype=Wire on (F9) Edit page
 			self.wire = 1
 
+		# Kambi+ for creaseAngle detection
+		#
+		# (We iterate over me.faces, even though we already have
+		# loop over all faces in code above. But above loop is done only
+		# if me.faceUV. I didn't want to break anything, so I simply
+		# made another loop,
+		# but possibly the loop above can just work for all meshes,
+		# i.e. test "if me.faceUV" may simply be removed)
+		someFacesSmooth = 0
+		someFacesNotSmooth = 0
+		
+		for face in me.faces:
+			if face.smooth:
+				someFacesSmooth = 1
+			else:
+				someFacesNotSmooth = 1
+
+		# Calculate self.creaseAngle
+		#
+		# (!someFacesSmooth) means now that all faces are solid, and
+		# (!someFacesNotSmooth) means that all faces are smooth.
+		#
+		# TODO: below works OK only for meshes with all faces smooth
+		# or all faces solid. Code under "if someFacesSmooth" should
+		# actually say "if allFacesSmooth". For mixed meshes,
+		# the intelligent approach would be break down the mesh into
+		# two parts, solid (with creaseAngle = 0) and smooth
+		# (with creaseAngle derived from autosmooth setting, or
+		# anything > Pi if autosmooth off).
+		# Alternatively, if we could somehow extract vertex normals
+		# from blender, generated honouring smooth/solid/autosmooth
+		# settings, we could write normals explicitly.
+
+		autoSmooth = me.mode & Blender.Mesh.Modes['AUTOSMOOTH']
+
+		if self.verbose >= 2:
+			print "Mesh has some faces smooth: %d, some faces non-smooth: %d, autosmooth: %d, autosmooth degree: %d" \
+			  % (someFacesSmooth, someFacesNotSmooth, autoSmooth, me.degr)
+
+		if someFacesSmooth:
+			if autoSmooth:			
+				self.creaseAngle = self.deg2rad(me.degr)
+			else:
+				self.creaseAngle = 4 # anything > Pi
+		else:
+			# assume mesh fully solid
+			self.creaseAngle = 0
+
 	###
 	### The next few functions nest Collision/Billboard/Halo nodes.
 	### For real mesh data export, jump down to writeMeshData()
@@ -705,31 +753,8 @@ class VRML2Export:
 			else:
 				self.writeIndented("solid TRUE\n")
 
-		# Kambi+: ugly hack to write creaseAngle for some models.
-		if os.path.basename(Blender.Get('filename')) == 'temp_humanoid.blend':
-			print "Kambi: special humanoid.blend behavior"
-			if ob.getData(False, True).name == 'Foot' or \
-			   ob.getData(False, True).name == 'Foot.001':
-				self.writeIndented("creaseAngle 0\n")
-			else:
-				self.writeIndented("creaseAngle 4 # > Pi, completely smooth\n")
-
-		if os.path.basename(Blender.Get('filename')) == 'fountain.blend' or os.path.basename(Blender.Get('filename')) == 'temp_fountain_bumpdemo.blend':
-			print "Kambi: special fountain.blend behavior"
-			if ob.getData(False, True).name == 'Column' or \
-			   ob.getData(False, True).name == 'Column.001' or \
-			   ob.getData(False, True).name == 'Column.002' or \
-			   ob.getData(False, True).name == 'Column.003' or \
-			   ob.getData(False, True).name == 'Column.004' or \
-			   ob.getData(False, True).name == 'Column.005' or \
-			   ob.getData(False, True).name == 'Column.006' or \
-			   ob.getData(False, True).name == 'Column.007' or \
-			   ob.getData(False, True).name == 'Column.008' or \
-			   ob.getData(False, True).name == 'Column.009' or \
-			   ob.getData(False, True).name == 'Fountain':
-				self.writeIndented("creaseAngle 0.5235987756 # Pi / 6 = 30 degrees\n")
-			elif ob.name == 'FountainCore':
-				self.writeIndented("creaseAngle 4 # > Pi, completely smooth\n")
+		if ifStyle == "IndexedFaceSet":
+			self.writeIndented("creaseAngle %f\n" % self.creaseAngle)
 
 		self.writeCoordinates(me, meshName)
 		self.writeCoordIndex(me, meshName, matnum, image)
