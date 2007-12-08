@@ -52,6 +52,25 @@ and the version distributed with Blender.
   and in Walk mode you see only nearest parts, then probably your
   visibilityLimit is too small.
 
+- Note about modifiers and armature: currently, the script doesn't
+  apply modifiers, which I want to fix at some point (I know it's
+  possible to apply modifiers from script, after all Wavefront
+  OBJ exporter does this).
+
+  Note that for this to work you will have to use armature by modifier,
+  not by parenting.(You can convert old models by clicking "make real"
+  to convert parenting to modifier).
+  That's because there's no way yet to do "make real" from script.
+  See [http://lists.blender.org/pipermail/bf-python/2006-September/004302.html].
+  So it's best if armature is already a modifier, otherwise you will
+  have to click "make real" each time before exporting.
+
+  About armature modifier see e.g.
+    http://wiki.blender.org/index.php/Manual/Armature_Modifier
+    http://en.wikibooks.org/wiki/Blender_3D:_Noob_to_Pro/Advanced_Tutorials/Advanced_Animation/Guided_tour/Mesh/Amodif
+  Armature as modifier allows you e.g. to set VertexGroups/Envelopes
+  setting per object, as opposed to "per armature" as previous.
+
 ------------------------------------------------------------------------------
 Things fixed in my version:
 
