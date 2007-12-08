@@ -102,9 +102,6 @@ def select_file(filename):
 	for frame in range(sFrame, eFrame+1):
 		Blender.Set('curframe', frame)
 		Blender.Redraw()
-		scene = Blender.Scene.GetCurrent()
-		world = Blender.World.GetCurrent()
-		worldmat = Blender.Texture.Get()
 
 		ffilename = filename
 		ffilename+=str(frame)
