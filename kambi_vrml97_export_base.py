@@ -9,7 +9,7 @@ __url__ = ["blender", "elysiun",
 "Author's (Bart) homepage, http://www.neeneenee.de/vrml",
 "Author's (Michalis) project: http://vrmlengine.sourceforge.net/"]
 __email__ = ["Bart, bart:neeneenee*de"]
-__version__ = "2006/01/17-kambi2"
+__version__ = "2006/01/17-kambi4"
 
 #------------------------------------------------------------------------
 # VRML97 exporter for blender 2.36 or above
@@ -196,7 +196,7 @@ class VRML2Export:
 		self.file.write("# Blender version %s\n" % Blender.Get('version'))
 		self.file.write("# Blender file %s\n" % sys.basename(bfile))
 		self.file.write("# Exported using VRML97 exporter " \
-						"v1.55-kambi2\n\n")
+						"v1.55-kambi4\n\n")
 
 	def writeInline(self):
 		inlines = Blender.Scene.Get()
@@ -1284,3 +1284,21 @@ class VRML2Export:
 	def writeUnindented(self, s):
 		self.file.write(s)
 
+
+####################################
+# Global utility functions
+####################################
+
+def vrml97ExportFrame(frameNumber, filename):
+	"""Jump to given frameNumber of current scene, and export it to
+	given VRML filename. The filename is expected to be relative
+	to current Blender model directory. The exporting takes whole
+	VRML file (not only selected) and exports it uncompressed.
+	"""
+
+	path = os.path.dirname(sys.expandpath(Blender.Get('filename')))
+
+	Blender.Set('curframe', frameNumber)
+	Blender.Redraw()
+	wrlexport = VRML2Export(os.path.join(path, filename), 'all')
+	wrlexport.export()

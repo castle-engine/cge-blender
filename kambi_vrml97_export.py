@@ -15,7 +15,7 @@ __url__ = ["blender", "elysiun",
 "Author's (Bart) homepage, http://www.neeneenee.de/vrml",
 "Author's (Michalis) project: http://vrmlengine.sourceforge.net/"]
 __email__ = ["Bart, bart:neeneenee*de"]
-__version__ = "2006/01/17-kambi2"
+__version__ = "2006/01/17-kambi4"
 __bpydoc__ = """\
 This script exports to VRML97 format.
 
