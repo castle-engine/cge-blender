@@ -20,17 +20,18 @@ and the version distributed with Blender.
   that VRML 1.0 exporter doesn't touch the lights.
   Be sure to set lights the way how you want them for VRML.
 
-  Although, there's a bug: DirectionalLight is set in stupid way
-  that will not affect anything. (it's inside Transform grouping node).
+  Although, there's a bug: DirectionalLight is written incorrectly,
+  and does not affect anything according to VRML spec.
+  (it's inside Transform grouping node).
 
 - It exports camera for VRML file using correct way.
   VRML 1.0 exporter also exported camera but using brain-dead
   way (it just transformed whole scene to match camera...).
   So now you should just set your camera right for VRML file.
 
-  Well, gravityUp is still stupid (it's always equal to cameraUp,
+  Well, gravityUp may still be bad (it's always equal to cameraUp,
   which is not always what's needed). You may want to correct by
-  view3dscene "Navigation -> Walk mode settings -> Change gravity up..."
+  my view3dscene "Navigation -> Walk mode settings -> Change gravity up..."
   and then "Console -> Print Current Camera Node (VRML 2.0)"
   and add generated camera node to VRML file.
 
@@ -42,10 +43,11 @@ and the version distributed with Blender.
 - It generated IndexedLineSet when the mesh drawing type
   is set to Wireframe in blender, but this is a little buggy:
   last index on each face is not connected with the first.
-  I corrected this by regexp replace:
+  I correct this by regexp replace:
           \([0-9]+\) \(.*\) -1,
   to
           \1 \2 \1 -1,
+  (although this should be eventually corrected in the script, TODO).
 
 - Beware that Camera visibilityLimit is exported.
   If you don't see anything on the scene in view3dscene Examine mode
