@@ -922,8 +922,10 @@ class VRML2Export:
 			# to use filename... but still it strips the path from the
 			# filename, which I find bad. I want to have
 			# filename with (possibly relative) path prefix.
-			# TODO: although I should probably strip initial
-			# // if present.
+			#
+			# I only strip // (indicating relative path in Blender).			
+			if filename[0:2] == '//':
+				filename = filename[2:]
 			self.writeIndented('url "%s"\n' % filename)
 			
 			self.writeIndented("}\n",-1)
