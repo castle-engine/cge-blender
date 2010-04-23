@@ -9,7 +9,7 @@ __url__ = ["blender", "elysiun",
 "Author's (Bart) homepage, http://www.neeneenee.de/vrml",
 "Author's (Michalis) project: http://vrmlengine.sourceforge.net/"]
 __email__ = ["Bart, bart:neeneenee*de"]
-__version__ = "2006/01/17-kambi4"
+__version__ = "2006/01/17-kambi5"
 
 #------------------------------------------------------------------------
 # VRML97 exporter for blender 2.36 or above
@@ -196,7 +196,7 @@ class VRML2Export:
 		self.file.write("# Blender version %s\n" % Blender.Get('version'))
 		self.file.write("# Blender file %s\n" % sys.basename(bfile))
 		self.file.write("# Exported using VRML97 exporter " \
-						"v1.55-kambi4\n\n")
+						"v1.55-kambi5\n\n")
 
 	def writeInline(self):
 		inlines = Blender.Scene.Get()
@@ -336,7 +336,10 @@ class VRML2Export:
 		self.writeIndented("cutOffAngle %s\n" % \
 						   (round(cutOffAngle,self.cp)))
 		# Note: point down -Y axis, transform node above will rotate
-		self.writeIndented("direction 0.0 -1.0 0.0\n")
+		#self.writeIndented("direction 0.0 -1.0 0.0\n")
+		# Kambi: since we don't transform +Y to +Z, this needs to be -Z
+		# TODO: check and submit to Blender script too, if applies.
+		self.writeIndented("direction 0.0 0.0 -1.0\n")
 		self.writeIndented("location 0.0 0.0 0.0\n")
 		self.writeIndented("}\n",-1)
 		self.writeIndented("\n")
