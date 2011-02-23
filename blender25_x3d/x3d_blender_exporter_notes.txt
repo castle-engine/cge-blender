@@ -28,9 +28,8 @@ Normals and smoothing:
 
 - This above is especially important since exported geometry by default
   is visible only from one side (they one where normals point out in Blender,
-  i.e. ordered CCW in both Blender and X3D). You can make two-sided:
-  you have to add UV texture, and mark texture faces as "two side"
-  (TODO: check it works).
+  i.e. ordered CCW in both Blender and X3D). You can make it two-sided:
+  you have to add UV texture, and mark texture faces as "two side".
 
 Collisions:
 - By default geometry is not collidable. To make it collidable,
