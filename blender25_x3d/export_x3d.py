@@ -610,14 +610,34 @@ class x3d_class:
 
     def writeImageTexture(self, image):
         name = image.name
-        filepath = os.path.basename(image.filepath)
+        filepath = image.filepath
+
+        # strip //, indicating in Blender a relative path.
+        if filepath[0:2] == '//':
+            filepath = filepath[2:]
+
+        # Calculate normalmap path (with _normalmap suffix in name),
+        # and use it if exists
+        (filepath_before_ext,filepath_ext) = os.path.splitext(filepath)
+        normalmap_path = filepath_before_ext + '_normalmap' + filepath_ext
+        if os.path.exists(os.path.join(os.path.dirname(self.filepath), normalmap_path)):
+            print('Found normalmap under %s, using' % normalmap_path)
+        else:
+            normalmap_path = None
+        
         if name in self.texNames:
             self.writeIndented("<ImageTexture USE=\"%s\" />\n" % self.cleanStr(name))
+            if normalmap_path != None:
+                self.writeIndented("<ImageTexture USE=\"%s_normalmap\" containerField=\"normalMap\" />\n" % self.cleanStr(name))
             self.texNames[name] += 1
         else:
             self.writeIndented("<ImageTexture DEF=\"%s\" " % self.cleanStr(name), 1)
-            self.file.write("url=\'\"%s\"\' />" % image.filepath)
+            self.file.write("url=\'\"%s\"\' />" % filepath)
             self.writeIndented("\n",-1)
+            if normalmap_path != None:
+                self.writeIndented("<ImageTexture DEF=\"%s_normalmap\" containerField=\"normalMap\" " % self.cleanStr(name), 1)
+                self.file.write("url=\'\"%s\"\' />" % normalmap_path)
+                self.writeIndented("\n",-1)
             self.texNames[name] = 1
 
     def writeBackground(self, world, alltextures):

@@ -15,14 +15,17 @@ exporter and my modified version):
 
 Normals and smoothing:
 - "Auto Smooth" is correctly exported.
+
 - Make sure you marked all the faces (the whole object) as "Smooth"
   (as "Smooth" actually means: 1. display smooth in OpenGL,
   2. for rendering and exporting use Auto Smooth.)
+
 - Although normals are not explicitly exported, but Blender's
   controls to recalculate normals ("Recalculate" (Ctrl+N, Ctrl+Shift+N
   for inside), "Flip Normals") still should be used. They actually reorder
   the vertexes of faces consistently, which is needed for X3D browser
   to recalculate normals consistently from given side.
+
 - This above is especially important since exported geometry by default
   is visible only from one side (they one where normals point out in Blender,
   i.e. ordered CCW in both Blender and X3D). You can make two-sided:
@@ -37,13 +40,26 @@ Collisions:
 Many textures / materials on mesh:
 - Released Blender still cannot cope with various materials
   and textures on the same mesh. The most sane way is to split mesh
-  by materials right before exporting (but don't save such splitted mesh ---
-  just split by materials (P in edit mode), export, then undo splitting).
+  by materials right before exporting.
+
+  Go into edit mode, separate (P) by materials.
+  Then, since the distributed exporter only looks at first material,
+  you have to delete unused materials from created meshes. Such that
+  each mesh has only one material.
+
+  Remember that you usually don't want to save such splitted mesh
+  (later modifying it is more difficult). Just don't save /
+  or undo the splitting / or join parts again.
+
 - If you also have multiple textures, I found it easiest
   to use different materials under a different textures ---
   this way splitting by materials also splits by textures.
-  And since it's easy to select faces with the same materials,
-  you also get a simple way of selecting faces with given texture.
+  So you may want to add as many materials as you have textures,
+  and assign them to the same faces. If you don't want to color your
+  textures, then just leave materials with grayscale (e.g. white) colors.
+  Since it's easy to select faces with the same materials,
+  this way you also get a simple way of selecting faces with given texture.
+
 - If you want to export textures, you either have to select "Face Textures"
   or assign an image texture to material. The first option sucks,
   since then material is ignored. So in practice you have to assign
@@ -52,6 +68,21 @@ Many textures / materials on mesh:
 ------------------------------------------------------------------------------
 Kambi changes:
 - Blender exports invalid texture urls, without '' around. Fixed.
+
 - Blender exports only basename (no directory) of texture url.
   We changed it, to include directory (be sure to check "Relative paths"
   when choosing texture).
+  It's usually most comfortable to keep .blend file in the same directory
+  as exported X3D file, this way relative paths are the same.
+
+- We automatically check for existence of normalmap file for bump mapping:
+  we take normal texture filename (like "textures/image.png"),
+  add "_normalmap" right before extension (making e.g. "textures/image_normalmap.png"),
+  and look if it exists relative to your exported filename dir.
+  So in the above example, you want to have exported X3D model to be in
+  the same directory as "textures" (and "textures" should contain
+  image.png and image_normalmap.png).
+  If such file is found, we use it
+  (http://vrmlengine.sourceforge.net/kambi_vrml_extensions.php#section_ext_bump_mapping).
+  This requires "Kambi VRML game engine" extensions for bump mapping,
+  so open e.g. with view3dscene.
