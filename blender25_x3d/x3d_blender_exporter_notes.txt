@@ -7,7 +7,13 @@ The idea is that you can replace your installed
 Based on 2.56 version currently (I'll try to keep up and always base
 on newest releaed Blender version). I also keep the original version here,
 to easily see my modifications
-(diff -u export_x3d_distributed.py export_x3d.py).
+(diff -u export_x3d_distributed.py export_x3d.py)
+and apply my modifications to next releases
+(diff -u export_x3d_distributed.py export_x3d.py  > a.patch
+ cp -f ...new_blender_release.../export_x3d.py export_x3d.py
+ patch export_x3d.py  < a.patch
+ (assuming of course they can be applied automatically, i.e. the code
+ around then didn't change upstream)).
 
 ------------------------------------------------------------------------------
 Blender exporter usage notes (apply to both Blender distributed X3D
