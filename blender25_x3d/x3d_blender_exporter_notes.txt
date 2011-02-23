@@ -1,0 +1,57 @@
+The Blender X3D exporter with Kambi (Michalis Kamburelis)
+fixes and modifications.
+
+The idea is that you can replace your installed
+.../scripts/op/io_scene_x3d/export_x3d.py with my version.
+
+Based on 2.56 version currently (I'll try to keep up and always base
+on newest releaed Blender version). I also keep the original version here,
+to easily see my modifications
+(diff -u export_x3d_distributed.py export_x3d.py).
+
+------------------------------------------------------------------------------
+Blender exporter usage notes (apply to both Blender distributed X3D
+exporter and my modified version):
+
+Normals and smoothing:
+- "Auto Smooth" is correctly exported.
+- Make sure you marked all the faces (the whole object) as "Smooth"
+  (as "Smooth" actually means: 1. display smooth in OpenGL,
+  2. for rendering and exporting use Auto Smooth.)
+- Although normals are not explicitly exported, but Blender's
+  controls to recalculate normals ("Recalculate" (Ctrl+N, Ctrl+Shift+N
+  for inside), "Flip Normals") still should be used. They actually reorder
+  the vertexes of faces consistently, which is needed for X3D browser
+  to recalculate normals consistently from given side.
+- This above is especially important since exported geometry by default
+  is visible only from one side (they one where normals point out in Blender,
+  i.e. ordered CCW in both Blender and X3D). You can make two-sided:
+  you have to add UV texture, and mark texture faces as "two side"
+  (TODO: check it works).
+
+Collisions:
+- By default geometry is not collidable. To make it collidable,
+  add UV texture and mark (any face, but to be future-proof
+  it's probably best to mark them all) as "Collidable".
+
+Many textures / materials on mesh:
+- Released Blender still cannot cope with various materials
+  and textures on the same mesh. The most sane way is to split mesh
+  by materials right before exporting (but don't save such splitted mesh ---
+  just split by materials (P in edit mode), export, then undo splitting).
+- If you also have multiple textures, I found it easiest
+  to use different materials under a different textures ---
+  this way splitting by materials also splits by textures.
+  And since it's easy to select faces with the same materials,
+  you also get a simple way of selecting faces with given texture.
+- If you want to export textures, you either have to select "Face Textures"
+  or assign an image texture to material. The first option sucks,
+  since then material is ignored. So in practice you have to assign
+  to materials the same textures that you already assigned in UV mode.
+
+------------------------------------------------------------------------------
+Kambi changes:
+- Blender exports invalid texture urls, without '' around. Fixed.
+- Blender exports only basename (no directory) of texture url.
+  We changed it, to include directory (be sure to check "Relative paths"
+  when choosing texture).
