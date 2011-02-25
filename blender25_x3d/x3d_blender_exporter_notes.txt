@@ -46,7 +46,7 @@ Many textures / materials on mesh:
 - Released Blender still cannot cope with various materials
   and textures on the same mesh. The most sane way is to split mesh
   by materials right before exporting.
-  (Note: this is reported as fixed in SVN.)
+  (Note: this is fixed in Blender SVN.)
 
   Go into edit mode, separate (P) by materials.
   Then, since the distributed exporter only looks at first material,
@@ -74,12 +74,15 @@ Many textures / materials on mesh:
 ------------------------------------------------------------------------------
 Kambi changes:
 - Blender exports invalid texture urls, without '' around. Fixed.
+  (Note: this is also fixed in Blender SVN.)
 
 - Blender exports only basename (no directory) of texture url.
   We changed it, to include directory (be sure to check "Relative paths"
   when choosing texture).
   It's usually most comfortable to keep .blend file in the same directory
   as exported X3D file, this way relative paths are the same.
+  (Note: this is also fixed in Blender SVN, in a very nice way --- using
+  alternative urls, with the first one containing relative path.)
 
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
