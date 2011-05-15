@@ -135,7 +135,7 @@ class x3d_class:
         # self.file.write("\t<meta name=\"filename\" content=\"%s\" />\n" % sys.basename(bfile))
         self.file.write("\t<meta name=\"generator\" content=\"Blender %s\" />\n" % bpy.app.version_string)
         # self.file.write("\t<meta name=\"generator\" content=\"Blender %s\" />\n" % Blender.Get('version'))
-        self.file.write("\t<meta name=\"translator\" content=\"X3D exporter v1.55 (2006/01/17)\" />\n")
+        self.file.write("\t<meta name=\"translator\" content=\"X3D exporter v1.55 (2006/01/17) (with Kambi mods)\" />\n")
         self.file.write("</head>\n")
         self.file.write("<Scene>\n")
 
