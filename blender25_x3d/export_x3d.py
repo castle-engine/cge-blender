@@ -117,6 +117,9 @@ class x3d_class:
 
         self.namesFog = ("", "LINEAR", "EXPONENTIAL", "")
 
+        # store Image references that were printed *and* had normalmaps
+        self.images_with_normalmap = []
+
 ##########################################################
 # Writing nodes routines
 ##########################################################
@@ -586,7 +589,7 @@ class x3d_class:
 
         if image.tag:
             self.write_indented("<ImageTexture USE=\"%s\" />\n" % self.cleanStr(name))
-            if image.normalmap_tag:
+            if image in self.images_with_normalmap:
                 self.write_indented("<ImageTexture USE=\"%s_normalmap\" containerField=\"normalMap\" />\n" % self.cleanStr(name))
         else:
             image.tag = True
@@ -604,12 +607,12 @@ class x3d_class:
                 images.append(image_relative_path)
                 
                 # Calculate normalmap path (with _normalmap suffix in name),
-                # and use it if exists. Also set image.normalmap_tag
+                # and use it if exists. Also append to self.images_with_normalmap
                 # (needed for proper behavior when this texture is USEd).
                 (path_before_ext,path_ext) = os.path.splitext(image_relative_path)
                 normalmap_path = path_before_ext + '_normalmap' + path_ext
-                image.normalmap_tag = os.path.exists(os.path.join(relpath, normalmap_path))
-                if image.normalmap_tag:
+                if os.path.exists(os.path.join(relpath, normalmap_path)):
+                    self.images_with_normalmap.append(image)
                     print('Found normalmap under %s, using' % normalmap_path)
                 else:
                     normalmap_path = None                
@@ -621,7 +624,7 @@ class x3d_class:
             self.write_indented("\n", -1)
 
             if normalmap_path != None:
-                self.writeIndented("<ImageTexture DEF=\"%s_normalmap\" containerField=\"normalMap\" " % self.cleanStr(name), 1)
+                self.write_indented("<ImageTexture DEF=\"%s_normalmap\" containerField=\"normalMap\" " % self.cleanStr(name), 1)
                 self.file.write("url=\'\"%s\"\' />" % normalmap_path)
                 self.write_indented("\n", -1)
 
