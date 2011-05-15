@@ -2,9 +2,10 @@ The Blender X3D exporter with Kambi (Michalis Kamburelis)
 fixes and modifications.
 
 The idea is that you can replace your installed
-.../scripts/op/io_scene_x3d/export_x3d.py with my version.
+blender/2.57/scripts/addons/io_scene_x3d/export_x3d.py
+with my version.
 
-Based on 2.56 version currently (I'll try to keep up and always base
+Based on 2.57 version currently (I'll try to keep up and always base
 on newest releaed Blender version). I also keep the original version here,
 to easily see my modifications
 (diff -u export_x3d_distributed.py export_x3d.py)
@@ -71,18 +72,22 @@ Many textures / materials on mesh:
   since then material is ignored. So in practice you have to assign
   to materials the same textures that you already assigned in UV mode.
 
+- Since Blender 2.57 (not in 2.56), original Blender exporter generates
+  very nice image URLs. The actual image filename in Blender is used,
+  and three alternative URLs are generated in X3D file (relative to output dir,
+  basename, absolute). This makes our previous image url fixes obsolete, good.
+
+  You usually want to make sure to check "Relative paths"
+  when choosing the texture, and depend on the 1st URL (path relative
+  to output dir) to be correct.
+
 ------------------------------------------------------------------------------
 Kambi changes:
-- Blender exports invalid texture urls, without '' around. Fixed.
-  (Note: this is also fixed in Blender SVN.)
-
-- Blender exports only basename (no directory) of texture url.
-  We changed it, to include directory (be sure to check "Relative paths"
-  when choosing texture).
-  It's usually most comfortable to keep .blend file in the same directory
-  as exported X3D file, this way relative paths are the same.
-  (Note: this is also fixed in Blender SVN, in a very nice way --- using
-  alternative urls, with the first one containing relative path.)
+- We apply this fix to Blender exporter:
+  http://projects.blender.org/scm/viewvc.php/trunk/py/scripts/addons/io_scene_x3d/export_x3d.py?root=bf-extensions&r1=1713&r2=1888&
+  This is quite serious bug, making Blender released 2.57 exporter
+  almost useless. The fix is of course also in SVN, just didn't make it
+  for 2.57 release.
 
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
