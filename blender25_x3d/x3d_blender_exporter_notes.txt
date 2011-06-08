@@ -89,6 +89,10 @@ Kambi changes:
   almost useless. The fix is of course also in SVN, just didn't make it
   for 2.57 release.
 
+- We fix creaseAngle to be in radians.
+  This fix was also submitted to Blender, see
+  http://projects.blender.org/tracker/index.php?func=detail&aid=27611&group_id=9&atid=127
+
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
   add "_normalmap" right before extension (making e.g. "textures/image_normalmap.png"),
@@ -100,3 +104,22 @@ Kambi changes:
   (http://vrmlengine.sourceforge.net/kambi_vrml_extensions.php#section_ext_bump_mapping).
   This requires "Kambi VRML game engine" extensions for bump mapping,
   so open e.g. with view3dscene.
+
+------------------------------------------------------------------------------
+Development notes:
+
+Blender original scripts are in SVN repository here:
+https://svn.blender.org/svnroot/bf-extensions/trunk/py/scripts/addons
+
+Web access is through:
+http://projects.blender.org/scm/viewvc.php/trunk/py/scripts/addons/?root=bf-extensions
+In particular, X3D exporter is on:
+http://projects.blender.org/scm/viewvc.php/trunk/py/scripts/addons/io_scene_x3d/export_x3d.py?root=bf-extensions
+
+Bugs should be reported to "Bleder 2.5 Bug Tracker"
+http://projects.blender.org/tracker/?func=browse&group_id=9&atid=498
+Like this:
+http://projects.blender.org/tracker/?group_id=9&atid=498&func=detail&aid=26220
+
+Patches may go to patches tracker:
+http://projects.blender.org/tracker/?atid=127&group_id=9&func=browse

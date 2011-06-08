@@ -448,7 +448,7 @@ class x3d_class:
                         fw("solid=\"false\" ")
 
                     if is_smooth:
-                        fw("creaseAngle=\"%.4f\" " % mesh.auto_smooth_angle)
+                        fw("creaseAngle=\"%.4f\" " % math.radians(mesh.auto_smooth_angle))
 
                     if is_uv:
                         # "texCoordIndex"
