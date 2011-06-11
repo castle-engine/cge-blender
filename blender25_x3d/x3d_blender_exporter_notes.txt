@@ -90,8 +90,11 @@ Kambi changes:
   for 2.57 release.
 
 - We fix creaseAngle to be in radians.
-  This fix was also submitted to Blender, see
+  This is also fixed now in Blender, although differently ---they just expose
+  values in radians, see
   http://projects.blender.org/tracker/index.php?func=detail&aid=27611&group_id=9&atid=127
+  and
+  http://projects.blender.org/scm/viewvc.php?view=rev&root=bf-blender&revision=37330
 
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
