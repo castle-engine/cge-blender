@@ -2,10 +2,10 @@ The Blender X3D exporter with Kambi (Michalis Kamburelis)
 fixes and modifications.
 
 The idea is that you can replace your installed
-blender/2.57/scripts/addons/io_scene_x3d/export_x3d.py
+blender/2.58/scripts/addons/io_scene_x3d/export_x3d.py
 with my version.
 
-Based on 2.57 version currently (I'll try to keep up and always base
+Based on 2.58 version currently (I'll try to keep up and always base
 on newest releaed Blender version). I also keep the original version here,
 to easily see my modifications
 (diff -u export_x3d_distributed.py export_x3d.py)
@@ -72,7 +72,7 @@ Many textures / materials on mesh:
   since then material is ignored. So in practice you have to assign
   to materials the same textures that you already assigned in UV mode.
 
-- Since Blender 2.57 (not in 2.56), original Blender exporter generates
+- In Blender >= 2.57, original Blender exporter generates
   very nice image URLs. The actual image filename in Blender is used,
   and three alternative URLs are generated in X3D file (relative to output dir,
   basename, absolute). This makes our previous image url fixes obsolete, good.
@@ -83,18 +83,9 @@ Many textures / materials on mesh:
 
 ------------------------------------------------------------------------------
 Kambi changes:
-- We apply this fix to Blender exporter:
-  http://projects.blender.org/scm/viewvc.php/trunk/py/scripts/addons/io_scene_x3d/export_x3d.py?root=bf-extensions&r1=1713&r2=1888&
-  This is quite serious bug, making Blender released 2.57 exporter
-  almost useless. The fix is of course also in SVN, just didn't make it
-  for 2.57 release.
-
-- We fix creaseAngle to be in radians.
-  This is also fixed now in Blender, although differently ---they just expose
-  values in radians, see
-  http://projects.blender.org/tracker/index.php?func=detail&aid=27611&group_id=9&atid=127
-  and
-  http://projects.blender.org/scm/viewvc.php?view=rev&root=bf-blender&revision=37330
+- For URLs: we use first the filepath_ref, not filepath_base.
+  This way you don't get any warnings if you set path_mode correctly
+  when exporting.
 
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
