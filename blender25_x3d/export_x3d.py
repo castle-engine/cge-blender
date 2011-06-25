@@ -564,8 +564,6 @@ def export(file,
 
                         # --- Write IndexedTriangleSet Attributes (same as IndexedFaceSet)
                         fw('solid="%s"\n' % ('true' if mesh.show_double_sided else 'false'))
-                        if is_smooth:
-                            fw(ident_step + 'creaseAngle="%.4g"\n' % mesh.auto_smooth_angle)
 
                         if use_normals:
                             # currently not optional, could be made so:
