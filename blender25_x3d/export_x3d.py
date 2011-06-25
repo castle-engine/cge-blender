@@ -224,7 +224,8 @@ def export(file,
         fw('DEF=%s\n' % view_id)
         fw(ident_step + 'centerOfRotation="0 0 0"\n')
         fw(ident_step + 'position="%3.2f %3.2f %3.2f"\n' % loc[:])
-        fw(ident_step + 'orientation="%3.2f %3.2f %3.2f %3.2f"\n' % (quat.axis[:] + (quat.angle, )))
+        if abs(quat.axis.x) > 0.001 or abs(quat.axis.y) > 0.001 or abs(quat.axis.z) > 0.001:
+            fw(ident_step + 'orientation="%3.2f %3.2f %3.2f %3.2f"\n' % (quat.axis[:] + (quat.angle, )))
         fw(ident_step + 'fieldOfView="%.3g"\n' % obj.data.angle)
         fw(ident_step + '/>\n')
 
@@ -534,6 +535,7 @@ def export(file,
 
                             ident_step = ident + (' ' * (-len(ident) + \
                             fw('%s<TextureTransform ' % ident)))
+                            fw('\n')
                             # fw('center="%.6g %.6g" ' % (0.0, 0.0))
                             fw(ident_step + 'translation="%.6g %.6g"\n' % loc)
                             fw(ident_step + 'scale="%.6g %.6g"\n' % (sca_x, sca_y))
@@ -1077,7 +1079,7 @@ def export(file,
         if image.tag:
             fw('%s<ImageTexture USE=%s />\n' % (ident, image_id))
             if image in images_with_normalmap:
-                fw("%s<ImageTexture USE=\"%s_normalmap\" containerField=\"normalMap\" />\n" % (image.name, image_id))
+                fw("%s<ImageTexture USE=\"%s_normalmap\" containerField=\"normalMap\" />\n" % (ident, image.name))
         else:
             image.tag = True
 
@@ -1112,7 +1114,7 @@ def export(file,
             if os.path.exists(os.path.join(base_dst, normalmap_path)):
                 images_with_normalmap.append(image)
                 print('Found normalmap under %s, using' % normalmap_path)
-                fw("%s<ImageTexture DEF=\"%s_normalmap\" containerField=\"normalMap\" url=\'\"%s\"\'>\n" % (ident, image.name, normalmap_path))
+                fw("%s<ImageTexture DEF=\"%s_normalmap\" containerField=\"normalMap\" url=\'\"%s\"\' />\n" % (ident, image.name, normalmap_path))
             else:
                 normalmap_path = None
 
