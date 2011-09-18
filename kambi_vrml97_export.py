@@ -13,7 +13,7 @@ __author__ = ("Rick Kimball", "Ken Miller", "Steve Matthews", "Bart", "Michalis 
 __url__ = ["blender", "elysiun",
 "Author's (Rick) homepage, http://kimballsoftware.com/blender",
 "Author's (Bart) homepage, http://www.neeneenee.de/vrml",
-"Author's (Michalis) project: http://vrmlengine.sourceforge.net/"]
+"Author's (Michalis) project: http://castle-engine.sourceforge.net/"]
 __email__ = ["Bart, bart:neeneenee*de"]
 __version__ = "2006/01/17-kambi4"
 __bpydoc__ = """\

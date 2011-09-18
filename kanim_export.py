@@ -10,11 +10,11 @@ Tooltip: 'Exports to Kambi Animation format'
 """
 
 __author__ = ("Grzegorz Hermanowicz", "Michalis Kamburelis", "Parts based on vrml97_export.py")
-__url__ = ["http://vrmlengine.sourceforge.net/kanim_format.php"]
+__url__ = ["http://castle-engine.sourceforge.net/kanim_format.php"]
 __bpydoc__ = """\
 This script exports to kanim format, which stands for
 \"Kambi VRML game engine animations\".
-[http://vrmlengine.sourceforge.net/kanim_format.php] explains all.
+[http://castle-engine.sourceforge.net/kanim_format.php] explains all.
 
 Usage:
 
