@@ -13,7 +13,7 @@ __author__ = ("Grzegorz Hermanowicz", "Michalis Kamburelis", "Parts based on vrm
 __url__ = ["http://castle-engine.sourceforge.net/kanim_format.php"]
 __bpydoc__ = """\
 This script exports to kanim format, which stands for
-\"Kambi VRML game engine animations\".
+\"Castle Game Engine animations\".
 [http://castle-engine.sourceforge.net/kanim_format.php] explains all.
 
 Usage:
@@ -132,5 +132,5 @@ else:
 		extension=".wrz"
 	else:
 		extension=".wrl"
-	Blender.Window.FileSelector(select_file, "Export Kambi VRML engine's animations", \
+	Blender.Window.FileSelector(select_file, "Export KAnim (Castle Game Engine animation)", \
 								sys.makename(ext=animextension))
