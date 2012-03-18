@@ -84,6 +84,10 @@ Many textures / materials on mesh:
 ------------------------------------------------------------------------------
 Kambi changes:
 
+- We apply my patches:
+  http://projects.blender.org/tracker/index.php?func=detail&aid=30580&group_id=9&atid=127
+  http://projects.blender.org/tracker/index.php?func=detail&aid=30572&group_id=9&atid=127
+
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
   add "_normalmap" right before extension (making e.g. "textures/image_normalmap.png"),
