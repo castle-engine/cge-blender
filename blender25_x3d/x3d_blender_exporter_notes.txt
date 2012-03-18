@@ -83,9 +83,6 @@ Many textures / materials on mesh:
 
 ------------------------------------------------------------------------------
 Kambi changes:
-- For URLs: we use first the filepath_ref, not filepath_base.
-  This way you don't get any warnings if you set path_mode correctly
-  when exporting.
 
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
