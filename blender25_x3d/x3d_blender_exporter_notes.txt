@@ -20,8 +20,14 @@ and apply my modifications to next releases
 Blender exporter usage notes (apply to both Blender distributed X3D
 exporter and my modified version):
 
+- Backface culling: latest exporter honours the "Game Settings->Backface Culling"
+  settings in the material. (Switch to "Game Mode" to see this checkbox.)
+
 Normals and smoothing:
-- "Auto Smooth" is correctly exported.
+- "Smooth" on the whole mesh,
+  "Auto Smooth" checkbox and "Angle" are correctly exported.
+  (Original exporter ignores the "Auto Smooth" checkbox, but we fix
+  it in our version and the patch is submitted to Blender.)
 
 - Make sure you marked all the faces (the whole object) as "Smooth"
   (as "Smooth" actually means: 1. display smooth in OpenGL,
@@ -47,7 +53,7 @@ Many textures / materials on mesh:
 - Released Blender still cannot cope with various materials
   and textures on the same mesh. The most sane way is to split mesh
   by materials right before exporting.
-  (Note: this is fixed in Blender SVN.)
+  (Later: this is fixed in later Blender.)
 
   Go into edit mode, separate (P) by materials.
   Then, since the distributed exporter only looks at first material,
@@ -86,9 +92,7 @@ Kambi changes:
 
 - We apply my patches:
   http://projects.blender.org/tracker/index.php?func=detail&aid=30572&group_id=9&atid=127
-
-- We use creaseAngle = 4 (perfect smooth) if auto-smooth checkbox is unchecked.
-  TODO: report to blender as a patch.
+  http://projects.blender.org/tracker/index.php?func=detail&aid=33138&group_id=9&atid=127
 
 - We automatically check for existence of normalmap file for bump mapping:
   we take normal texture filename (like "textures/image.png"),
@@ -102,9 +106,8 @@ Kambi changes:
   This requires "Castle Game Engine" extensions for bump mapping,
   so open e.g. with view3dscene.
 
-Old:
-- http://projects.blender.org/tracker/index.php?func=detail&aid=30580&group_id=9&atid=127
-  is already present in Blender up-stream.
+- Old (already present in Blender up-stream):
+  http://projects.blender.org/tracker/index.php?func=detail&aid=30580&group_id=9&atid=127
 ------------------------------------------------------------------------------
 Development notes:
 
