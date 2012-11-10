@@ -529,7 +529,11 @@ def export(file,
         mesh_id_coords = prefix_quoted_str(mesh_id, 'coords_')
         mesh_id_normals = prefix_quoted_str(mesh_id, 'normals_')
 
-        if not mesh.faces:
+        # tessellation faces may not exist
+        if not mesh.tessfaces and mesh.polygons:
+            mesh.update(calc_tessface=True)
+
+        if not mesh.tessfaces:
             return
 
         use_collnode = bool([mod for mod in obj.modifiers
@@ -552,7 +556,7 @@ def export(file,
             fw('%s<Group DEF=%s>\n' % (ident, mesh_id_group))
             ident += '\t'
 
-            is_uv = bool(mesh.uv_textures.active)
+            is_uv = bool(mesh.tessface_uv_textures.active)
             # is_col, defined for each material
 
             is_coords_written = False
@@ -582,12 +586,16 @@ def export(file,
 
             # fast access!
             mesh_vertices = mesh.vertices[:]
-            mesh_faces = mesh.faces[:]
+            mesh_faces = mesh.tessfaces[:]
             mesh_faces_materials = [f.material_index for f in mesh_faces]
             mesh_faces_vertices = [f.vertices[:] for f in mesh_faces]
 
             if is_uv and True in mesh_materials_use_face_texture:
-                mesh_faces_image = [(fuv.image if (mesh_materials_use_face_texture[mesh_faces_materials[i]]) else mesh_material_images[mesh_faces_materials[i]]) for i, fuv in enumerate(mesh.uv_textures.active.data)]
+                mesh_faces_image = [(fuv.image
+                                     if mesh_materials_use_face_texture[mesh_faces_materials[i]]
+                                     else mesh_material_images[mesh_faces_materials[i]])
+                                     for i, fuv in enumerate(mesh.tessface_uv_textures.active.data)]
+
                 mesh_faces_image_unique = set(mesh_faces_image)
             elif len(set(mesh_material_images) | {None}) > 1:  # make sure there is at least one image
                 mesh_faces_image = [mesh_material_images[material_index] for material_index in mesh_faces_materials]
@@ -618,7 +626,7 @@ def export(file,
                     ident += '\t'
 
                     is_smooth = False
-                    is_col = (mesh.vertex_colors.active and (material is None or material.use_vertex_color_paint))
+                    is_col = (mesh.tessface_vertex_colors.active and (material is None or material.use_vertex_color_paint))
 
                     # kludge but as good as it gets!
                     for i in face_group:
@@ -695,8 +703,8 @@ def export(file,
                     ident = ident[:-1]
                     fw('%s</Appearance>\n' % ident)
 
-                    mesh_faces_col = mesh.vertex_colors.active.data if is_col else None
-                    mesh_faces_uv = mesh.uv_textures.active.data if is_uv else None
+                    mesh_faces_col = mesh.tessface_vertex_colors.active.data if is_col else None
+                    mesh_faces_uv = mesh.tessface_uv_textures.active.data if is_uv else None
 
                     #-- IndexedFaceSet or IndexedLineSet
                     if use_triangulate:
@@ -746,7 +754,7 @@ def export(file,
                         # build a mesh mapping dict
                         vertex_hash = [{} for i in range(len(mesh.vertices))]
                         # worst case every face is a quad
-                        face_tri_list = [[None, None, None] for i in range(len(mesh.faces) * 2)]
+                        face_tri_list = [[None, None, None] for i in range(len(mesh.tessfaces) * 2)]
                         vert_tri_list = []
                         totvert = 0
                         totface = 0
@@ -849,7 +857,7 @@ def export(file,
                         # --- Write IndexedFaceSet Attributes (same as IndexedTriangleSet)
                         fw('solid="%s"\n' % ('true' if material and material.game_settings.use_backface_culling else 'false'))
                         if is_smooth:
-                            # if Auto-Smooth angle, if enabled. Otherwise make 
+                            # use Auto-Smooth angle, if enabled. Otherwise make
                             # the mesh perfectly smooth by creaseAngle > pi.
                             fw(ident_step + 'creaseAngle="%.4f"\n' % (mesh.auto_smooth_angle if mesh.use_auto_smooth else 4.0))
 
