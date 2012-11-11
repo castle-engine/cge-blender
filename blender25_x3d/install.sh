@@ -7,4 +7,7 @@ set -eu
 # (what is the generic dir name under $HOME, regardless of Blender version,
 # that works with Blender 2.5x?)
 
-cp -f export_x3d.py ~/installed/blender/2.64/scripts/addons/io_scene_x3d/export_x3d.py
+BLENDER_VERSION='2.64'
+
+cp -f export_x3d.py ~/installed/blender/"$BLENDER_VERSION"/scripts/addons/io_scene_x3d/export_x3d.py
+cp -f export_kanim.py ~/installed/blender/"$BLENDER_VERSION"/scripts/addons/export_kanim.py
