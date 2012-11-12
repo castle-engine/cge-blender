@@ -372,15 +372,14 @@ def export(file,
 
         loc, rot, scale = matrix.decompose()
         rot = rot.to_axis_angle()
-        rot = rot[0][:] + (rot[1], )
+        rot = rot[0].normalized()[:] + (rot[1], )
 
         ident_step = ident + (' ' * (-len(ident) + \
         fw('%s<Viewpoint ' % ident)))
         fw('DEF=%s\n' % view_id)
         fw(ident_step + 'centerOfRotation="0 0 0"\n')
         fw(ident_step + 'position="%3.2f %3.2f %3.2f"\n' % loc[:])
-        if abs(rot[0]) > 0.001 or abs(rot[1]) > 0.001 or abs(rot[2]) > 0.001:
-            fw(ident_step + 'orientation="%3.2f %3.2f %3.2f %3.2f"\n' % rot)
+        fw(ident_step + 'orientation="%3.2f %3.2f %3.2f %3.2f"\n' % rot)
         fw(ident_step + 'fieldOfView="%.3f"\n' % obj.data.angle)
         fw(ident_step + '/>\n')
 
