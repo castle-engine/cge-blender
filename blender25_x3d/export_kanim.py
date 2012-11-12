@@ -49,6 +49,8 @@ bl_info = {
 
 import bpy
 import os
+from bpy_extras.io_utils import path_reference_mode
+from bpy.props import *
 
 class ExportKAnim(bpy.types.Operator):
     """Export the animation to KAnim format (Castle Game Engine's animations)"""
@@ -56,13 +58,79 @@ class ExportKAnim(bpy.types.Operator):
     bl_label = "Export KAnim (.kanim)"
 
     # properties for interaction with fileselect_add
-    filepath = bpy.props.StringProperty(subtype="FILE_PATH")
-    filter_glob = bpy.props.StringProperty(default="*.kanim", options={'HIDDEN'})
+    filepath = StringProperty(subtype="FILE_PATH")
+    filter_glob = StringProperty(default="*.kanim", options={'HIDDEN'})
 
-    frame_skip = bpy.props.IntProperty(name="Frames to skip",
+    # properties special for KAnim export
+    frame_skip = IntProperty(name="Frames to skip",
         # As part of exporting to KAnim, we export each still frame to X3D. We iterate over all animation frames, from the start, exporting it and skipping this number of following frames. Smaller values mean less files (less disk usage, faster animation loading in game) but also worse quality (as KAnim loader in game only interpolates linearly between frames). Default is 4, which means every 5th frame is exported, which means 5 frames for each second (for default 25fps)
         description="How many frames to skip between exported frames. The game using KAnim format will reconstruct these frames using linear interpolation",
             default=4, min=0, max=50)
+
+    # properies passed through to the X3D exporter,
+    # definition copied from io_scene_x3d/__init__.py
+    use_selection = BoolProperty(
+            name="Selection Only",
+            description="Export selected objects only",
+            default=False,
+            )
+    use_apply_modifiers = BoolProperty(
+            name="Apply Modifiers",
+            description="Use transformed mesh data from each object",
+            default=True,
+            )
+    use_triangulate = BoolProperty(
+            name="Triangulate",
+            description="Write quads into 'IndexedTriangleSet'",
+            default=False,
+            )
+    use_normals = BoolProperty(
+            name="Normals",
+            description="Write normals with geometry",
+            default=False,
+            )
+    use_hierarchy = BoolProperty(
+            name="Hierarchy",
+            description="Export parent child relationships",
+            default=True,
+            )
+    name_decorations = BoolProperty(
+            name="Name decorations",
+            description=("Add prefixes to the names of exported nodes to "
+                         "indicate their type"),
+            default=True,
+            )
+    use_h3d = BoolProperty(
+            name="H3D Extensions",
+            description="Export shaders for H3D",
+            default=False,
+            )
+
+    axis_forward = EnumProperty(
+            name="Forward",
+            items=(('X', "X Forward", ""),
+                   ('Y', "Y Forward", ""),
+                   ('Z', "Z Forward", ""),
+                   ('-X', "-X Forward", ""),
+                   ('-Y', "-Y Forward", ""),
+                   ('-Z', "-Z Forward", ""),
+               ),
+        default='Z',
+        )
+
+    axis_up = EnumProperty(
+            name="Up",
+            items=(('X', "X Up", ""),
+                   ('Y', "Y Up", ""),
+                   ('Z', "Z Up", ""),
+                   ('-X', "-X Up", ""),
+                   ('-Y', "-Y Up", ""),
+                   ('-Z', "-Z Up", ""),
+                   ),
+            default='Y',
+            )
+
+    path_mode = path_reference_mode
 
     def output_frame(self, context, kanim_file, frame, frame_start):
         """Output a given frame to a single X3D file, and add <frame...> line to
@@ -79,7 +147,7 @@ class ExportKAnim(bpy.types.Operator):
         # calculate filenames stuff
         (output_dir, output_basename) = os.path.split(self.filepath)
         output_basename = os.path.splitext(output_basename)[0] \
-            + ("%04d" % frame) + '.x3d'
+            + "_" + ("%04d" % frame) + '.x3d.gz'
 
         # write kanim line
         kanim_file.write('  <frame file_name="%s" time="%f" />\n' %
@@ -88,10 +156,19 @@ class ExportKAnim(bpy.types.Operator):
         # write X3D with animation frame
         context.scene.frame_set(frame)
         bpy.ops.export_scene.x3d(filepath=os.path.join(output_dir, output_basename),
-            check_existing=False, use_selection=False, use_apply_modifiers=True,
-            use_triangulate=False, use_normals=False, use_compress=False,
-            use_hierarchy=True, name_decorations=True, use_h3d=False,
-            axis_forward='Z', axis_up='Y', path_mode='AUTO')
+            check_existing = False,
+            use_compress = True, # always compress, as we pass x3d.gz filename
+            # pass through our properties to X3D exporter
+            use_selection       = self.use_selection,
+            use_apply_modifiers = self.use_apply_modifiers,
+            use_triangulate     = self.use_triangulate,
+            use_normals         = self.use_normals,
+            use_hierarchy       = self.use_hierarchy,
+            name_decorations    = self.name_decorations,
+            use_h3d             = self.use_h3d,
+            axis_forward        = self.axis_forward,
+            axis_up             = self.axis_up,
+            path_mode           = self.path_mode)
 
     def execute(self, context):
         kanim_file = open(self.filepath, 'w')
