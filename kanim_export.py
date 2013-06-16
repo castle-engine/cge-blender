@@ -94,7 +94,7 @@ def select_file(filename):
 	print >> animfile, '<animation scenes_per_time="' + str(context.framesPerSec())+'" optimization="separate-shapes-no-transform" equality_epsilon="0.001" loop="false" backwards="false" >'
 
 	for frame in range(sFrame, eFrame+1):
-		print >> animfile, '<frame file_name="'+os.path.basename(filename)+str(frame)+extension+'" time="'+str(1.0/context.framesPerSec()*(frame-1))+'" />'
+		print >> animfile, '<frame url="'+os.path.basename(filename)+str(frame)+extension+'" time="'+str(1.0/context.framesPerSec()*(frame-1))+'" />'
 
 	print >> animfile, '</animation>'
 

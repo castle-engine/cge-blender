@@ -150,7 +150,7 @@ class ExportKAnim(bpy.types.Operator):
             + "_" + ("%04d" % frame) + '.x3d.gz'
 
         # write kanim line
-        kanim_file.write('  <frame file_name="%s" time="%f" />\n' %
+        kanim_file.write('  <frame url="%s" time="%f" />\n' %
           (output_basename, (frame-frame_start) / 25.0))
 
         # write X3D with animation frame
