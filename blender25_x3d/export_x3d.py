@@ -90,6 +90,10 @@ def suffix_quoted_str(value, suffix):
     return value[:-1] + suffix + value[-1:]
 
 
+def bool_as_str(value):
+    return ('false', 'true')[bool(value)]
+
+
 def clean_def(txt):
     # see report [#28256]
     if not txt:
@@ -239,7 +243,7 @@ def h3d_is_object_view(scene, obj):
 def export(file,
            global_matrix,
            scene,
-           use_apply_modifiers=False,
+           use_mesh_modifiers=False,
            use_selection=True,
            use_triangulate=False,
            use_normals=False,
@@ -400,10 +404,10 @@ def export(file,
         else:
             return
 
-    def writeNavigationInfo(ident, scene):
+    def writeNavigationInfo(ident, scene, has_lamp):
         ident_step = ident + (' ' * (-len(ident) + \
         fw('%s<NavigationInfo ' % ident)))
-        fw('headlight="false"\n')
+        fw('headlight="%s"\n' % bool_as_str(not has_lamp))
         fw(ident_step + 'visibilityLimit="0.0"\n')
         fw(ident_step + 'type=\'"EXAMINE", "ANY"\'\n')
         fw(ident_step + 'avatarSize="0.25, 1.75, 0.75"\n')
@@ -711,7 +715,7 @@ def export(file,
                         fw('%s<IndexedTriangleSet ' % ident)))
 
                         # --- Write IndexedTriangleSet Attributes (same as IndexedFaceSet)
-                        fw('solid="%s"\n' % ('true' if material and material.game_settings.use_backface_culling else 'false'))
+                        fw('solid="%s"\n' % bool_as_str(material and material.game_settings.use_backface_culling))
 
                         if use_normals or is_force_normals:
                             fw(ident_step + 'normalPerVertex="true"\n')
@@ -854,7 +858,7 @@ def export(file,
                         fw('%s<IndexedFaceSet ' % ident)))
 
                         # --- Write IndexedFaceSet Attributes (same as IndexedTriangleSet)
-                        fw('solid="%s"\n' % ('true' if material and material.game_settings.use_backface_culling else 'false'))
+                        fw('solid="%s"\n' % bool_as_str(material and material.game_settings.use_backface_culling))
                         if is_smooth:
                             # use Auto-Smooth angle, if enabled. Otherwise make
                             # the mesh perfectly smooth by creaseAngle > pi.
@@ -1307,13 +1311,14 @@ def export(file,
             images = [
                 filepath_ref,
                 filepath_base,
-                filepath_full,
             ]
+            if path_mode != 'RELATIVE':
+                images.append(filepath_full)
 
             images = [f.replace('\\', '/') for f in images]
             images = [f for i, f in enumerate(images) if f not in images[:i]]
 
-            fw(ident_step + "url='%s' " % ' '.join(['"%s"' % escape(f) for f in images]))
+            fw(ident_step + "url='%s'\n" % ' '.join(['"%s"' % escape(f) for f in images]))
             fw(ident_step + '/>\n')
 
             # Calculate normalmap path (with _normalmap suffix in name),
@@ -1323,7 +1328,7 @@ def export(file,
             normalmap_path = path_before_ext + '_normalmap' + path_ext
             if os.path.exists(os.path.join(base_dst, normalmap_path)):
                 images_with_normalmap.append(image)
-                print('Found normalmap under %s, using' % normalmap_path)
+                print('Found normalmap under %s, using. DEPRECATED: we do not advice using our exporter this way. Better use material_properties.xml to assign normalmaps to X3D exported from Blender.' % normalmap_path)
                 fw("%s<ImageTexture DEF=\"%s_normalmap\" containerField=\"normalMap\" url=\'\"%s\"\' />\n" % (ident, image.name, normalmap_path))
             else:
                 normalmap_path = None
@@ -1416,12 +1421,17 @@ def export(file,
 
             ident = writeTransform_begin(ident, obj_main_matrix if obj_main_parent else global_matrix * obj_main_matrix, suffix_quoted_str(obj_main_id, _TRANSFORM))
 
+        # Set here just incase we dont enter the loop below.
+        is_dummy_tx = False
+
         for obj, obj_matrix in (() if derived is None else derived):
             obj_type = obj.type
 
             if use_hierarchy:
                 # make transform node relative
                 obj_matrix = obj_main_matrix_world_invert * obj_matrix
+            else:
+                obj_matrix = global_matrix * obj_matrix
 
             # H3D - use for writing a dummy transform parent
             is_dummy_tx = False
@@ -1440,9 +1450,9 @@ def export(file,
                     ident += '\t'
 
             elif obj_type in {'MESH', 'CURVE', 'SURFACE', 'FONT'}:
-                if (obj_type != 'MESH') or (use_apply_modifiers and obj.is_modified(scene, 'PREVIEW')):
+                if (obj_type != 'MESH') or (use_mesh_modifiers and obj.is_modified(scene, 'PREVIEW')):
                     try:
-                        me = obj.to_mesh(scene, use_apply_modifiers, 'PREVIEW')
+                        me = obj.to_mesh(scene, use_mesh_modifiers, 'PREVIEW')
                     except:
                         me = None
                     do_remove = True
@@ -1514,20 +1524,20 @@ def export(file,
         bpy.data.materials.tag(False)
         bpy.data.images.tag(False)
 
-        print('Info: starting X3D export to %r...' % file.name)
-        ident = ''
-        ident = writeHeader(ident)
-
-        writeNavigationInfo(ident, scene)
-        writeBackground(ident, world)
-        writeFog(ident, world)
-
-        ident = '\t\t'
-
         if use_selection:
             objects = [obj for obj in scene.objects if obj.is_visible(scene) and obj.select]
         else:
             objects = [obj for obj in scene.objects if obj.is_visible(scene)]
+
+        print('Info: starting X3D export to %r...' % file.name)
+        ident = ''
+        ident = writeHeader(ident)
+
+        writeNavigationInfo(ident, scene, any(obj.type == 'LAMP' for obj in objects))
+        writeBackground(ident, world)
+        writeFog(ident, world)
+
+        ident = '\t\t'
 
         if use_hierarchy:
             objects_hierarchy = build_hierarchy(objects)
@@ -1580,7 +1590,7 @@ def gzip_open_utf8(filepath, mode):
 
 def save(operator, context, filepath="",
          use_selection=True,
-         use_apply_modifiers=False,
+         use_mesh_modifiers=False,
          use_triangulate=False,
          use_normals=False,
          use_compress=False,
@@ -1607,7 +1617,7 @@ def save(operator, context, filepath="",
     export(file,
            global_matrix,
            context.scene,
-           use_apply_modifiers=use_apply_modifiers,
+           use_mesh_modifiers=use_mesh_modifiers,
            use_selection=use_selection,
            use_triangulate=use_triangulate,
            use_normals=use_normals,

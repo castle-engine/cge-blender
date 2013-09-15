@@ -74,7 +74,7 @@ class ExportKAnim(bpy.types.Operator):
             description="Export selected objects only",
             default=False,
             )
-    use_apply_modifiers = BoolProperty(
+    use_mesh_modifiers = BoolProperty(
             name="Apply Modifiers",
             description="Use transformed mesh data from each object",
             default=True,
@@ -160,7 +160,7 @@ class ExportKAnim(bpy.types.Operator):
             use_compress = True, # always compress, as we pass x3d.gz filename
             # pass through our properties to X3D exporter
             use_selection       = self.use_selection,
-            use_apply_modifiers = self.use_apply_modifiers,
+            use_mesh_modifiers  = self.use_mesh_modifiers,
             use_triangulate     = self.use_triangulate,
             use_normals         = self.use_normals,
             use_hierarchy       = self.use_hierarchy,
