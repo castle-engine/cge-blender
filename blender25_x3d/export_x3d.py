@@ -497,6 +497,11 @@ def export(file,
         fw(ident_step + 'color="%.4f %.4f %.4f"\n' % clamp_color(lamp.color))
         fw(ident_step + 'intensity="%.4f"\n' % intensity)
         fw(ident_step + 'direction="%.4f %.4f %.4f"\n' % orientation)
+        # global="TRUE" is necessary, because DirectionalLight has global=FALSE by default,
+        # and it means it would only affect stuff inside the same <Transform>,
+        # and writeDirectionalLight is always used such that <DirectionalLight> is surrounded 
+        # in it's own <Transform>, which means that all DirectionalLights would be ignored.
+        fw(ident_step + 'global="TRUE"\n')
         fw(ident_step + '/>\n')
 
     def writePointLight(ident, obj, matrix, lamp, world):
