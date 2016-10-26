@@ -474,7 +474,7 @@ def export(file,
         fw(ident_step + 'direction="%.4f %.4f %.4f"\n' % orientation)
         # global="TRUE" is necessary, because DirectionalLight has global=FALSE by default,
         # and it means it would only affect stuff inside the same <Transform>,
-        # and writeDirectionalLight is always used such that <DirectionalLight> is surrounded 
+        # and writeDirectionalLight is always used such that <DirectionalLight> is surrounded
         # in it's own <Transform>, which means that all DirectionalLights would be ignored.
         fw(ident_step + 'global="TRUE"\n')
         fw(ident_step + '/>\n')
@@ -1308,6 +1308,21 @@ def export(file,
             # Calculate normalmap path (with _normalmap suffix in name),
             # and use it if exists. Also append to images_with_normalmap
             # (needed for proper behavior when this texture is USEd).
+            #
+            # Old docs:
+            #
+            # We automatically check for existence of normalmap file for bump mapping:
+            # we take normal texture filename (like "textures/image.png"),
+            # add "_normalmap" right before extension (making e.g. "textures/image_normalmap.png"),
+            # and look if it exists relative to your exported filename dir.
+            # So in the above example, you want to have exported X3D model to be in
+            # the same directory as "textures" (and "textures" should contain
+            # image.png and image_normalmap.png).
+            # If such file is found, we use it
+            # (http://castle-engine.sourceforge.net/x3d_extensions.php#section_ext_bump_mapping).
+            # This requires "Castle Game Engine" extensions for bump mapping,
+            # so open e.g. with view3dscene.
+            #
             (path_before_ext,path_ext) = os.path.splitext(filepath_ref)
             normalmap_path = path_before_ext + '_normalmap' + path_ext
             if os.path.exists(os.path.join(base_dst, normalmap_path)):
