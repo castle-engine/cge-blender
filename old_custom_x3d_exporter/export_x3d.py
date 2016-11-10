@@ -1332,6 +1332,10 @@ def export(file,
             images = [f for i, f in enumerate(images) if f not in images[:i]]
 
             fw(ident_step + "url='%s'\n" % ' '.join(['"%s"' % escape(f) for f in images]))
+            if image.use_clamp_x:
+                fw(ident_step + "repeatS='false'\n")
+            if image.use_clamp_y:
+                fw(ident_step + "repeatT='false'\n")
             fw(ident_step + '/>\n')
 
             # Calculate normalmap path (with _normalmap suffix in name),
