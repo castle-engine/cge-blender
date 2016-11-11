@@ -147,18 +147,17 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
         # calculate filenames stuff
         (output_dir, output_basename) = os.path.split(self.filepath)
-        output_basename = os.path.splitext(output_basename)[0] \
-            + "_" + ("%04d" % frame) + '.x3d.gz'
+        x3d_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.x3d")
 
         # write castle-anim-frames line
-        output_file.write('  <frame url="%s" time="%f" />\n' %
-          (output_basename, (frame-frame_start) / 25.0))
+        output_file.write('  <frame time="%f">\n' %
+          ((frame-frame_start) / 25.0))
 
         # write X3D with animation frame
         context.scene.frame_set(frame)
-        bpy.ops.export_scene.x3d(filepath=os.path.join(output_dir, output_basename),
+        bpy.ops.export_scene.x3d(filepath=x3d_file_name,
             check_existing = False,
-            use_compress = True, # always compress, as we pass x3d.gz filename
+            use_compress = False, # never compress
             # pass through our properties to X3D exporter
             use_selection       = self.use_selection,
             use_mesh_modifiers  = self.use_mesh_modifiers,
@@ -170,6 +169,17 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             axis_forward        = self.axis_forward,
             axis_up             = self.axis_up,
             path_mode           = self.path_mode)
+
+        # read from temporary X3D file, and remove it
+        with open(x3d_file_name, 'r') as x3d_contents_file:
+            x3d_contents = x3d_contents_file.read()
+        os.remove(x3d_file_name)
+
+        # add X3D content
+        x3d_contents = x3d_contents.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+        x3d_contents = x3d_contents.replace('<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">', '')
+        output_file.write(x3d_contents)
+        output_file.write('  </frame>\n')
 
     def execute(self, context):
         output_file = open(self.filepath, 'w')
