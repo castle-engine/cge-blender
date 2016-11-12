@@ -53,7 +53,10 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
     # properties for interaction with fileselect_add
     filepath = StringProperty(subtype="FILE_PATH")
-    filter_glob = StringProperty(default="*.castle-anim-frames", options={'HIDDEN'})
+    # for some reason,
+    # filter "*.castle-anim-frames" doesn't work correctly (hides all files),
+    # so use "*.castle*"
+    filter_glob = StringProperty(default="*.castle*", options={'HIDDEN'})
 
     # properties special for castle-anim-frames export
     frame_skip = IntProperty(name="Frames to skip",
