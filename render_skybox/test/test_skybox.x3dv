@@ -1,0 +1,16 @@
+#X3D V3.2 utf8
+PROFILE Interchange
+
+Background {
+  backUrl "back.png"
+  bottomUrl "bottom.png"
+  frontUrl "front.png"
+  leftUrl "left.png"
+  rightUrl "right.png"
+  topUrl "top.png"
+}
+
+Shape {
+  appearance Appearance { material Material { } }
+  geometry Teapot { }
+}

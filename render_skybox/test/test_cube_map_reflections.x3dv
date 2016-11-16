@@ -1,0 +1,29 @@
+#X3D V3.2 utf8
+PROFILE Interchange
+
+# Uncomment this to have both skybox and cubemap. Should match with each other!
+# Background {
+#   backUrl "back.png"
+#   bottomUrl "bottom.png"
+#   frontUrl "front.png"
+#   leftUrl "left.png"
+#   rightUrl "right.png"
+#   topUrl "top.png"
+# }
+
+Shape {
+  appearance Appearance {
+    material Material { }
+    texture ComposedCubeMapTexture {
+      top ImageTexture { url "top.png" }
+      bottom ImageTexture { url "bottom.png" }
+      front ImageTexture { url "front.png" }
+      back ImageTexture { url "back.png" }
+      left ImageTexture { url "left.png" }
+      right ImageTexture { url "right.png" }
+    }
+  }
+  geometry Teapot {
+    texCoord TextureCoordinateGenerator { mode "WORLDSPACEREFLECTIONVECTOR" }
+  }
+}
