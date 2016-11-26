@@ -136,6 +136,12 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
     path_mode = path_reference_mode
 
+    make_duplicates_real = BoolProperty(
+            name="Make Duplicates Real (Export Particles)",
+            description="Make Duplicates Real Every Frame to Export e.g. Particles",
+            default=False,
+            )
+
     def output_frame(self, context, output_file, frame, frame_start):
         """Output a given frame to a single X3D file, and add <frame...> line to
         castle-anim-frames file.
@@ -191,7 +197,11 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
         frame = context.scene.frame_start
         while frame < context.scene.frame_end:
+            if self.make_duplicates_real:
+                self.make_duplicates_real_before(context)
             self.output_frame(context, output_file, frame, context.scene.frame_start)
+            if self.make_duplicates_real:
+                self.make_duplicates_real_after(context)
             frame += 1 + self.frame_skip
         # the last frame should be always output, regardless if we would "hit"
         # it with given frame_skip.
@@ -216,6 +226,70 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+    def make_duplicates_real_before(self, context):
+        self.old_objects = list(context.scene.objects)
+        self.old_objects_len = len(self.old_objects)
+
+        # Not sure what do I need to override for duplicates_make_real.
+        # Note: Don't override selected_editable_bases! It will crash Blender!
+        # override = {\
+        #   'selected_objects': self.old_objects,\
+        #   'selected_editable_objects': self.old_objects,\
+        #   'selected_bases': self.old_objects}
+        # bpy.ops.object.duplicates_make_real(override)
+
+        bpy.ops.object.select_all(action='SELECT')
+        bpy.ops.object.duplicates_make_real()
+
+        # Hm, I cannot seem to be able to undo the duplicates_make_real effect easily.
+        # Doing
+        #   bpy.ops.ed.undo()
+        # after
+        #   bpy.ops.object.duplicates_make_real(override, 'EXEC_DEFAULT', True)
+        # doesn't work.
+        # See https://www.blender.org/api/blender_python_api_2_63_14/bpy.ops.html
+        # about undo parameter. For some reason notes removed in later versions,
+        # see https://www.blender.org/api/blender_python_api_current/bpy.ops.html .
+        # Doing
+        #   bpy.ops.ed.undo_push()
+        # also doesn't help.
+
+    def make_duplicates_real_after(self, context):
+        new_objects = list(context.scene.objects)
+        new_objects_len = len(new_objects)
+
+        if new_objects_len < self.old_objects_len:
+            # TODO: raise something more specific, what other scripts do?
+            raise Exception("Error: we have less objecs after running duplicates_make_real, submit a bug")
+
+        duplicated_objects = [item for item in new_objects if item not in self.old_objects]
+
+        if len(duplicated_objects) != 0:
+            print("Make Duplicates Real Created new objects: ", len(duplicated_objects))
+
+            # Crashes...
+            # override = {\
+            #   'selected_objects': duplicated_objects,\
+            #   'selected_editable_objects': duplicated_objects,\
+            #   'selected_bases': duplicated_objects}
+            # bpy.ops.object.delete(override)
+
+            selected_count = 0
+            for ob in context.scene.objects:
+                ob.select = (ob in new_objects) and (ob not in self.old_objects)
+                if ob.select:
+                    selected_count = selected_count + 1
+            if selected_count != len(duplicated_objects):
+                raise Exception("Error: we did not select as many as expected, submit a bug")
+
+            bpy.ops.object.delete()
+
+        final_objects_len = len(list(context.scene.objects))
+        if final_objects_len != self.old_objects_len:
+            raise Exception("At the end, we do not have as many objects as at the beginning: ", self.old_objects_len, " -> ", new_objects_len, " -> ", final_objects_len)
+
+        print("Done making duplicates real: ", self.old_objects_len, " -> ", new_objects_len, " -> ", final_objects_len)
 
 def menu_func(self, context):
     self.layout.operator_context = 'INVOKE_DEFAULT'
