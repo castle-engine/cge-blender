@@ -154,6 +154,9 @@ class ExportCastleAnimFrames(bpy.types.Operator):
                          such that castle-anim-frames animation starts from time = 0.0.
         """
 
+        if self.make_duplicates_real:
+            self.make_duplicates_real_before(context)
+
         # calculate filenames stuff
         (output_dir, output_basename) = os.path.split(self.filepath)
         x3d_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.x3d")
@@ -190,6 +193,9 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         output_file.write(x3d_contents)
         output_file.write('  </frame>\n')
 
+        if self.make_duplicates_real:
+            self.make_duplicates_real_after(context)
+
     def execute(self, context):
         output_file = open(self.filepath, 'w')
         output_file.write('<?xml version="1.0"?>\n')
@@ -197,11 +203,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
         frame = context.scene.frame_start
         while frame < context.scene.frame_end:
-            if self.make_duplicates_real:
-                self.make_duplicates_real_before(context)
             self.output_frame(context, output_file, frame, context.scene.frame_start)
-            if self.make_duplicates_real:
-                self.make_duplicates_real_after(context)
             frame += 1 + self.frame_skip
         # the last frame should be always output, regardless if we would "hit"
         # it with given frame_skip.
@@ -266,7 +268,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         duplicated_objects = [item for item in new_objects if item not in self.old_objects]
 
         if len(duplicated_objects) != 0:
-            print("Make Duplicates Real Created new objects: ", len(duplicated_objects))
+            print("Make Duplicates Real Created new objects:", len(duplicated_objects))
 
             # Crashes...
             # override = {\
@@ -289,7 +291,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         if final_objects_len != self.old_objects_len:
             raise Exception("At the end, we do not have as many objects as at the beginning: ", self.old_objects_len, " -> ", new_objects_len, " -> ", final_objects_len)
 
-        print("Done making duplicates real: ", self.old_objects_len, " -> ", new_objects_len, " -> ", final_objects_len)
+        #print("Done making duplicates real: ", self.old_objects_len, " -> ", new_objects_len, " -> ", final_objects_len)
 
 def menu_func(self, context):
     self.layout.operator_context = 'INVOKE_DEFAULT'
