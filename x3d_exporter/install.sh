@@ -9,4 +9,3 @@ set -eu
 BLENDER_VERSION='2.78'
 
 cp -f export_x3d.py ~/installed/blender/"$BLENDER_VERSION"/scripts/addons/io_scene_x3d/export_x3d.py
-cp -f export_kanim.py ~/installed/blender/"$BLENDER_VERSION"/scripts/addons/export_kanim.py
