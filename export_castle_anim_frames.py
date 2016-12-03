@@ -51,14 +51,18 @@ class ExportCastleAnimFrames(bpy.types.Operator):
     bl_idname = "export.castle_anim_frames"
     bl_label = "Castle Animation Frames (.castle-anim-frames)"
 
+    # ------------------------------------------------------------------------
     # properties for interaction with fileselect_add
+
     filepath = StringProperty(subtype="FILE_PATH")
     # for some reason,
     # filter "*.castle-anim-frames" doesn't work correctly (hides all files),
     # so use "*.castle*"
     filter_glob = StringProperty(default="*.castle*", options={'HIDDEN'})
 
+    # ------------------------------------------------------------------------
     # properties special for castle-anim-frames export
+
     frame_skip = IntProperty(name="Frames to skip",
         # As part of exporting to castle-anim-frames, we export each still
         # frame to X3D. We iterate over all animation frames, from the start,
@@ -68,11 +72,25 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         # only interpolates linearly between frames). Default is 4, which
         # means every 5th frame is exported, which means 5 frames for each
         # second (for default 25fps)
-        description="How many frames to skip between exported frames. The game using castle-anim-frames format will reconstruct these frames using linear interpolation",
+        description="How many frames to skip between the exported frames. The Castle Game Engine using castle-anim-frames format will reconstruct these frames using linear interpolation.",
             default=4, min=0, max=50)
 
+    actions_object = StringProperty(
+            name="Actions",
+            description="If set, we will export all the actions of a given object. Leave empty to instead export the current animation from Start to End.",
+            default='',
+            )
+
+    make_duplicates_real = BoolProperty(
+            name="Make Duplicates Real",
+            description="This option allows to export particles (and other things not exportable to X3D without a \"Make Duplicates Real\" call).",
+            default=False,
+            )
+
+    # ------------------------------------------------------------------------
     # properies passed through to the X3D exporter,
     # definition copied from io_scene_x3d/__init__.py
+
     use_selection = BoolProperty(
             name="Selection Only",
             description="Export selected objects only",
@@ -136,11 +154,38 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
     path_mode = path_reference_mode
 
-    make_duplicates_real = BoolProperty(
-            name="Make Duplicates Real (Export Particles)",
-            description="Make Duplicates Real Every Frame to Export e.g. Particles",
-            default=False,
-            )
+    # methods ----------------------------------------------------------------
+
+    def draw(self, context):
+        # custom drawn operator,
+        # see https://www.blender.org/api/blender_python_api_2_57_release/bpy.types.Operator.html
+        layout = self.layout
+
+        box = layout.box()
+        box.label("Animation settings:")
+
+        # use prop_search to select an object,
+        # see http://blender.stackexchange.com/questions/7973/object-selection-box-in-addon
+        # https://www.blender.org/api/blender_python_api_2_70_release/bpy.types.UILayout.html#bpy.types.UILayout.prop_search
+        # https://blenderartists.org/forum/showthread.php?200311-Creating-a-Object-Selection-Box-in-Panel-UI-of-Blender-2-5
+        # http://blender.stackexchange.com/questions/6975/is-it-possible-to-use-bpy-props-pointerproperty-to-store-a-pointer-to-an-object
+        box.prop_search(self, 'actions_object', context.scene, "objects")
+
+        box.prop(self, "frame_skip")
+        box.prop(self, "make_duplicates_real")
+
+        box = layout.box()
+        box.label("X3D settings:")
+        box.prop(self, "use_selection")
+        box.prop(self, "use_mesh_modifiers")
+        box.prop(self, "use_triangulate")
+        box.prop(self, "use_normals")
+        box.prop(self, "use_hierarchy")
+        box.prop(self, "name_decorations")
+        box.prop(self, "use_h3d")
+        box.prop(self, "axis_forward")
+        box.prop(self, "axis_up")
+        box.prop(self, "path_mode")
 
     def output_frame(self, context, output_file, frame, frame_start):
         """Output a given frame to a single X3D file, and add <frame...> line to
@@ -196,23 +241,79 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         if self.make_duplicates_real:
             self.make_duplicates_real_after(context)
 
-    def execute(self, context):
-        output_file = open(self.filepath, 'w')
-        output_file.write('<?xml version="1.0"?>\n')
-        output_file.write('<animation>\n')
+    # Export a single animation (e.g. coming from a single action in Blender)
+    # to an <animation> element in castle-anim-frames.
+    #
+    # animation_name must be a string.
+    #
+    # frame_start, frame_end must be integer.
+    def output_one_animation(self, context, output_file, animation_name, frame_start, frame_end):
+        if animation_name != '':
+            output_file.write('<animation name="' + animation_name + '">\n')
+        else:
+            output_file.write('\t<animation>\n')
 
-        frame = context.scene.frame_start
-        while frame < context.scene.frame_end:
-            self.output_frame(context, output_file, frame, context.scene.frame_start)
+        frame = frame_start
+        while frame < frame_end:
+            self.output_frame(context, output_file, frame, frame_start)
             frame += 1 + self.frame_skip
         # the last frame should be always output, regardless if we would "hit"
         # it with given frame_skip.
-        self.output_frame(context, output_file, context.scene.frame_end, context.scene.frame_start)
+        self.output_frame(context, output_file, frame_end, frame_start)
 
-        output_file.write('</animation>\n')
+        output_file.write('\t</animation>\n')
+
+
+    def execute(self, context):
+        output_file = open(self.filepath, 'w')
+        output_file.write('<?xml version="1.0"?>\n')
+        output_file.write('<animations>\n')
+
+        if self.actions_object != '':
+            actions_object_o = context.scene.objects[self.actions_object]
+            found_some_action = False
+            for action in bpy.data.actions:
+                # use user_of_id to determine actions belonging to this object
+                if actions_object_o.user_of_id(action):
+                    act_start, act_end = action.frame_range
+                    act_start = int(act_start)
+                    act_end = int(act_end)
+                    found_some_action = True
+                    actions_object_o.animation_data.action = action
+                    print("Exporting action", action.name, "with frames" , act_start, "-", act_end)
+                    self.output_one_animation(context, output_file, action.name, act_start, act_end)
+            if not found_some_action:
+                raise Exception('No action found on object "' + self.actions_object + '"')
+        else:
+            # if no actions to use, then export whole context.scene.frame_start..end
+            print("Exporting animation with frames" , context.scene.frame_start, "-", context.scene.frame_end)
+            self.output_one_animation(context, output_file, "animation", context.scene.frame_start, context.scene.frame_end)
+
+        output_file.write('</animations>\n')
         output_file.close()
 
         return {'FINISHED'}
+
+    # Calculate the default object from which we should take actions.
+    # Returns string (object mame, or '' if not found).
+    def get_default_actions_object(self, context):
+        if self.use_selection:
+            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene) and obj.select]
+        else:
+            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene)]
+        more_than_one_armature = False
+        armature = None
+        for ob in objects:
+            if ob.type == 'ARMATURE' and ob.animation_data:
+                if armature != None:
+                    more_than_one_armature = True
+                armature = ob
+        if (armature != None) and (not more_than_one_armature):
+            return armature.name
+        else:
+            if more_than_one_armature:
+                print("Multiple armatures in the scene, cannot determine which one to use for \"Actions\" to export to castle-anim-frames. Adjust the \"Actions\" setting as needed.")
+            return ''
 
     def invoke(self, context, event):
         # set self.filepath (will be used by fileselect_add)
@@ -225,6 +326,9 @@ class ExportCastleAnimFrames(bpy.types.Operator):
                 blend_filepath = os.path.splitext(blend_filepath)[0]
 
             self.filepath = blend_filepath + ".castle-anim-frames"
+
+        # initialize actions_object
+        self.actions_object = self.get_default_actions_object(context)
 
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
