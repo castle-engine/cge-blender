@@ -44,7 +44,9 @@ bl_info = {
 import bpy
 import os
 from bpy_extras.io_utils import path_reference_mode
+from bpy_extras.io_utils import axis_conversion
 from bpy.props import *
+from mathutils import Vector
 
 class ExportCastleAnimFrames(bpy.types.Operator):
     """Export the animation to Castle Animation Frames (castle-anim-frames) format"""
@@ -187,6 +189,88 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         box.prop(self, "axis_up")
         box.prop(self, "path_mode")
 
+    def is_bound_box_empty(self, bound_box):
+        """Is the Blender bound_box empty.
+
+        The box is represented as 24 floats, as defined by Blender API, see
+        https://www.blender.org/api/blender_python_api_current/bpy.types.Object.html#bpy.types.Object.bound_box
+        (somewhat uncomfortable representation, IMHO...).
+        """
+
+        for f in bound_box:
+            if f != -1:
+                return False
+        return True
+
+    def get_current_bounding_box(self, context):
+        """Calculate current scene bounding box.
+        Returns two 3D vectors, bounding box center and size.
+
+        If the box is empty, the center is (0, 0, 0) and size is (-1, -1, -1).
+        This is consistent with X3D Group node bboxCenter/Size
+        (see http://www.web3d.org/documents/specifications/19775-1/V3.2/Part01/components/group.html#Group)
+        and castle-anim-frames bounding_box_center/size fields
+        (see http://michalis.ii.uni.wroc.pl/cge-www-preview/castle_animation_frames.php).
+        """
+
+        scene_box_empty = True
+        scene_box_min = (0.0, 0.0, 0.0)
+        scene_box_max = (0.0, 0.0, 0.0)
+
+        if self.use_selection:
+            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene) and obj.select]
+        else:
+            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene)]
+
+        global_matrix = axis_conversion(to_forward=self.axis_forward, to_up=self.axis_up).to_4x4()
+
+        for ob in objects:
+            # filter out cameras, lights etc., otherwise they have a bounding box
+            if (ob.type not in ('ARMATURE', 'LATTICE', 'EMPTY', 'CAMERA', 'LAMP', 'SPEAKER')) and \
+               (not self.is_bound_box_empty(ob.bound_box)):
+                # world-space bounding box calculation,
+                # see blender/2.78/scripts/addons/object_fracture_cell/fracture_cell_setup.py
+                # and http://blender.stackexchange.com/questions/8459/get-blender-x-y-z-and-bounding-box-with-script
+                object_box_points = [global_matrix * ob.matrix_world * Vector(corner) for corner in ob.bound_box]
+
+                # calculate object_box_min/max
+                object_box_min = (object_box_points[0].x, object_box_points[0].y,  object_box_points[0].z)
+                object_box_max = object_box_min
+                for v in object_box_points:
+                    object_box_min = (min(v.x, object_box_min[0]),
+                                      min(v.y, object_box_min[1]),
+                                      min(v.z, object_box_min[2]))
+                    object_box_max = (max(v.x, object_box_max[0]),
+                                      max(v.y, object_box_max[1]),
+                                      max(v.z, object_box_max[2]))
+
+                # update scene_box_min/max/empty
+                if scene_box_empty:
+                    scene_box_min = object_box_min
+                    scene_box_max = object_box_max
+                else:
+                    scene_box_min = (min(scene_box_min[0], object_box_min[0]),
+                                     min(scene_box_min[1], object_box_min[1]),
+                                     min(scene_box_min[2], object_box_min[2]))
+                    scene_box_max = (max(scene_box_max[0], object_box_max[0]),
+                                     max(scene_box_max[1], object_box_max[1]),
+                                     max(scene_box_max[2], object_box_max[2]))
+                scene_box_empty = False
+
+        # calculate scene_box_center/size from scene_box_min/max/empty
+        if scene_box_empty:
+            scene_box_center = (0.0, 0.0, 0.0)
+            scene_box_size = (-1.0, -1.0, -1.0)
+        else:
+            scene_box_center = ((scene_box_min[0] + scene_box_max[0]) / 2.0,
+                                (scene_box_min[1] + scene_box_max[1]) / 2.0,
+                                (scene_box_min[2] + scene_box_max[2]) / 2.0)
+            scene_box_size = (scene_box_max[0] - scene_box_min[0],
+                              scene_box_max[1] - scene_box_min[1],
+                              scene_box_max[2] - scene_box_min[2])
+
+        return (scene_box_center, scene_box_size)
+
     def output_frame(self, context, output_file, frame, frame_start):
         """Output a given frame to a single X3D file, and add <frame...> line to
         castle-anim-frames file.
@@ -206,12 +290,19 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         (output_dir, output_basename) = os.path.split(self.filepath)
         x3d_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.x3d")
 
+        # set the animation frame (before calculating bounding box)
+        context.scene.frame_set(frame)
+
+        # calculate bounding box in world space
+        (bounding_box_center, bounding_box_size) = self.get_current_bounding_box(context)
+
         # write castle-anim-frames line
-        output_file.write('\t\t<frame time="%f">\n' %
-          ((frame-frame_start) / 25.0))
+        output_file.write('\t\t<frame time="%f" bounding_box_center="%f %f %f" bounding_box_size="%f %f %f">\n' %
+          ((frame-frame_start) / 25.0,
+           bounding_box_center[0], bounding_box_center[1], bounding_box_center[2],
+           bounding_box_size  [0], bounding_box_size  [1], bounding_box_size  [2]))
 
         # write X3D with animation frame
-        context.scene.frame_set(frame)
         bpy.ops.export_scene.x3d(filepath=x3d_file_name,
             check_existing = False,
             use_compress = False, # never compress
