@@ -207,7 +207,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         x3d_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.x3d")
 
         # write castle-anim-frames line
-        output_file.write('  <frame time="%f">\n' %
+        output_file.write('\t\t<frame time="%f">\n' %
           ((frame-frame_start) / 25.0))
 
         # write X3D with animation frame
@@ -236,7 +236,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         x3d_contents = x3d_contents.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
         x3d_contents = x3d_contents.replace('<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">', '')
         output_file.write(x3d_contents)
-        output_file.write('  </frame>\n')
+        output_file.write('\n\t\t</frame>\n')
 
         if self.make_duplicates_real:
             self.make_duplicates_real_after(context)
@@ -249,7 +249,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
     # frame_start, frame_end must be integer.
     def output_one_animation(self, context, output_file, animation_name, frame_start, frame_end):
         if animation_name != '':
-            output_file.write('<animation name="' + animation_name + '">\n')
+            output_file.write('\t<animation name="' + animation_name + '">\n')
         else:
             output_file.write('\t<animation>\n')
 
