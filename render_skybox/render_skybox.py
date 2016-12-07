@@ -53,6 +53,7 @@ import bpy
 import os
 import mathutils
 import math
+from math import radians
 
 # For useful info for implementation, see
 # https://www.blender.org/api/blender_python_api_current/
@@ -92,11 +93,12 @@ class RenderSkybox(bpy.types.Operator):
             self.report({'ERROR'}, "The current camera object must be of type 'CAMERA'.")
             return {'CANCELLED'}
 
-        old_camera_rotation = camera.rotation_euler
-        # every one_render call will change camera.rotation_euler
-
+        # use [:] to copy rotation_euler value, not just reference
+        old_camera_rotation = camera.rotation_euler[:]
+        old_camera_lens_unit = camera.data.lens_unit
         old_camera_angle = camera.data.angle
-        camera.data.angle = 90
+        camera.data.lens_unit = 'FOV'
+        camera.data.angle = radians(90)
 
         old_filepath = context.scene.render.filepath
         try:
@@ -108,19 +110,19 @@ class RenderSkybox(bpy.types.Operator):
             self.current_progress = 0
             wm.progress_begin(self.current_progress, 6)
 
-            self.one_render(context, output_path, mathutils.Euler((               0.0 , 0.0, math.radians(-180.0))), "bottom")
-            self.one_render(context, output_path, mathutils.Euler((math.radians(180.0), 0.0, math.radians(-180.0))), "top")
+            self.one_render(context, output_path, mathutils.Euler((          0.0 , 0.0, radians(-180.0))), "bottom")
+            self.one_render(context, output_path, mathutils.Euler((radians(180.0), 0.0, radians(-180.0))), "top")
 
-            self.one_render(context, output_path, mathutils.Euler((math.radians(90.0), 0.0,                 0.0 )), "back")
-            self.one_render(context, output_path, mathutils.Euler((math.radians(90.0), 0.0,  math.radians(180.0))), "front")
-            self.one_render(context, output_path, mathutils.Euler((math.radians(90.0), 0.0,  math.radians(-90.0))), "left")
-            self.one_render(context, output_path, mathutils.Euler((math.radians(90.0), 0.0,  math.radians( 90.0))), "right")
+            self.one_render(context, output_path, mathutils.Euler((radians(90.0), 0.0,            0.0 )), "back")
+            self.one_render(context, output_path, mathutils.Euler((radians(90.0), 0.0,  radians(180.0))), "front")
+            self.one_render(context, output_path, mathutils.Euler((radians(90.0), 0.0,  radians(-90.0))), "left")
+            self.one_render(context, output_path, mathutils.Euler((radians(90.0), 0.0,  radians( 90.0))), "right")
 
             wm.progress_end()
         finally:
             context.scene.render.filepath = old_filepath
-            # TODO: this fails to restore rotation, it seems?
             camera.rotation_euler = old_camera_rotation
+            camera.data.lens_unit = old_camera_lens_unit
             camera.data.angle = old_camera_angle
 
         return {'FINISHED'}
