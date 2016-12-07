@@ -16,7 +16,9 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# Render the scene to a 6 textures.
+# Render the scene to 6 images.
+# Similar to rendering an "environment map" from Blender, but this really
+# just performs a normal render where everything works.
 # Camera position matters.
 # Camera rotation is overridden by this script
 # to capture all 6 sides of the world around.
@@ -37,7 +39,8 @@ bl_info = {
     "author": "Michalis Kamburelis",
     "version": (1, 0),
     "blender": (2, 78, 0),
-#TODO:    "location": "File > Export > Castle Animation Frames (.castle-anim-frames)",
+    #TODO: add this somewhere to menu
+    # "location": "Render > Render Skybox",
     "warning": "", # used for warning icon and text in addons panel
     # Note: this should only lead to official Blender wiki.
     # But since this script (probably) will not be official part of Blender,
@@ -51,15 +54,10 @@ import os
 import mathutils
 import math
 
-# See
+# For useful info for implementation, see
 # https://www.blender.org/api/blender_python_api_current/
 # http://blender.stackexchange.com/questions/31702/how-to-set-objects-rotation-from-python
 # http://blender.stackexchange.com/questions/8850/how-to-take-images-with-multiple-cameras-with-script
-
-# TODO:
-# - modifies and doesn't restore camera rotation
-# - doesn't check (or create new camera) that camera has field of view = 90 deg
-# - doesn't check that resolution width == height
 
 class RenderSkybox(bpy.types.Operator):
     """Render the scene 6 times, to outputs named front/back/top/bottom/left/right. Suitable to create skyboxes or cubemap textures for games. The orientation and naming matches X3D and Castle Game Engine."""
@@ -68,8 +66,8 @@ class RenderSkybox(bpy.types.Operator):
 
     def one_render(self, context, output_path, rotation, name):
         # set camera
-        cam = context.scene.camera
-        cam.rotation_euler = rotation
+        camera = context.scene.camera
+        camera.rotation_euler = rotation
 
         # render
         context.scene.render.filepath = output_path + "/" + name + ".png"
@@ -81,6 +79,25 @@ class RenderSkybox(bpy.types.Operator):
         wm.progress_update(self.current_progress)
 
     def execute(self, context):
+        if context.scene.render.resolution_x != context.scene.render.resolution_y:
+            self.report({'ERROR'}, "To make \"Render Skybox\" work, first set render size to be square (resolution_x must be equal to resolution_y).")
+            return {'CANCELLED'}
+
+        camera = context.scene.camera
+        if not camera:
+            self.report({'ERROR'}, "No current camera in the scene. Add some camera first.")
+            return {'CANCELLED'}
+
+        if camera.type != 'CAMERA':
+            self.report({'ERROR'}, "The current camera object must be of type 'CAMERA'.")
+            return {'CANCELLED'}
+
+        old_camera_rotation = camera.rotation_euler
+        # every one_render call will change camera.rotation_euler
+
+        old_camera_angle = camera.data.angle
+        camera.data.angle = 90
+
         old_filepath = context.scene.render.filepath
         try:
             wm = context.window_manager
@@ -102,6 +119,9 @@ class RenderSkybox(bpy.types.Operator):
             wm.progress_end()
         finally:
             context.scene.render.filepath = old_filepath
+            # TODO: this fails to restore rotation, it seems?
+            camera.rotation_euler = old_camera_rotation
+            camera.data.angle = old_camera_angle
 
         return {'FINISHED'}
 
