@@ -283,15 +283,16 @@ class ExportCastleAnimFrames(bpy.types.Operator):
                          such that castle-anim-frames animation starts from time = 0.0.
         """
 
-        if self.make_duplicates_real:
-            self.make_duplicates_real_before(context)
-
         # calculate filenames stuff
         (output_dir, output_basename) = os.path.split(self.filepath)
         x3d_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.x3d")
 
-        # set the animation frame (before calculating bounding box)
+        # set the animation frame (before calculating bounding box
+        # and making duplicates real)
         context.scene.frame_set(frame)
+
+        if self.make_duplicates_real:
+            self.make_duplicates_real_before(context)
 
         # calculate bounding box in world space
         (bounding_box_center, bounding_box_size) = self.get_current_bounding_box(context)
