@@ -362,18 +362,31 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
         if self.actions_object != '':
             actions_object_o = context.scene.objects[self.actions_object]
-            found_some_action = False
+
+            # first get actions_to_export,
+            # otherwise when we change the actions_object_o.animation_data.action,
+            # an old action may be temporarily considered unused
+            actions_to_export = []
             for action in bpy.data.actions:
                 # use user_of_id to determine actions belonging to this object
                 if actions_object_o.user_of_id(action):
-                    act_start, act_end = action.frame_range
-                    act_start = int(act_start)
-                    act_end = int(act_end)
-                    found_some_action = True
-                    actions_object_o.animation_data.action = action
-                    print("Exporting action", action.name, "with frames" , act_start, "-", act_end)
-                    self.output_one_animation(context, output_file, action.name, act_start, act_end)
-            if not found_some_action:
+                    actions_to_export.append(action)
+
+            if len(actions_to_export) > 0:
+                original_action = actions_object_o.animation_data.action
+                try:
+                    for action in actions_to_export:
+                        act_start, act_end = action.frame_range
+                        act_start = int(act_start)
+                        act_end = int(act_end)
+                        actions_object_o.animation_data.action = action
+                        print("Exporting action", action.name, "with frames" , act_start, "-", act_end)
+                        self.output_one_animation(context, output_file, action.name, act_start, act_end)
+                finally:
+                    # without restoring this, the action selected previously
+                    # would be lost, with 0 users
+                    actions_object_o.animation_data.action = original_action
+            else:
                 raise Exception('No action found on object "' + self.actions_object + '"')
         else:
             # if no actions to use, then export whole context.scene.frame_start..end
