@@ -31,7 +31,7 @@ bl_info = {
     "description": "Export animation to Castle Game Engine's Animation Frames format.",
     "author": "Michalis Kamburelis",
     "version": (1, 0),
-    "blender": (2, 64, 0),
+    "blender": (2, 77, 0),
     "location": "File > Export > Castle Animation Frames (.castle-anim-frames)",
     "warning": "", # used for warning icon and text in addons panel
     # Note: this should only lead to official Blender wiki.
@@ -369,8 +369,13 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             # an old action may be temporarily considered unused
             actions_to_export = []
             for action in bpy.data.actions:
-                # use user_of_id to determine actions belonging to this object
-                if actions_object_o.user_of_id(action):
+                # Use user_of_id to determine actions belonging to this object.
+                #
+                # It seems it fails to detect usage sometimes (see
+                # https://sourceforge.net/p/castle-engine/discussion/general/thread/902a6753/?limit=25#392c),
+                # and reverse ("action.user_of_id(actions_object_o)") doesn't help,
+                # so just always add all actions with "use_fake_user".
+                if actions_object_o.user_of_id(action) or action.use_fake_user:
                     actions_to_export.append(action)
 
             if len(actions_to_export) > 0:
