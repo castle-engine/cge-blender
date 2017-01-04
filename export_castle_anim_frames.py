@@ -31,6 +31,7 @@ bl_info = {
     "description": "Export animation to Castle Game Engine's Animation Frames format.",
     "author": "Michalis Kamburelis",
     "version": (1, 0),
+    # user_of_id is only available in Blender >= 2.77
     "blender": (2, 77, 0),
     "location": "File > Export > Castle Animation Frames (.castle-anim-frames)",
     "warning": "", # used for warning icon and text in addons panel
