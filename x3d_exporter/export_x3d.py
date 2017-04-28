@@ -224,6 +224,7 @@ def export(file,
            use_normals=False,
            use_hierarchy=True,
            use_h3d=False,
+           use_common_surface_shader=False,
            path_mode='AUTO',
            name_decorations=True,
            ):
@@ -253,6 +254,7 @@ def export(file,
         IM_ = 'IM_'
         WO_ = 'WO_'
         MA_ = 'MA_'
+        CSS_ = 'CSS_'
         LA_ = 'LA_'
         group_ = 'group_'
     else:
@@ -274,6 +276,7 @@ def export(file,
         IM_ = ''
         WO_ = ''
         MA_ = ''
+        CSS_ = ''
         LA_ = ''
         group_ = ''
 
@@ -981,11 +984,18 @@ def export(file,
             fw('%s</Collision>\n' % ident)
 
     def writeMaterial(ident, material, world):
-        material_id = quoteattr(unique_name(material, MA_ + material.name, uuid_cache_material, clean_func=clean_def, sep="_"))
+        material_id_unquoted = unique_name(material, MA_ + material.name, uuid_cache_material, clean_func=clean_def, sep="_")
+        material_id = quoteattr(material_id_unquoted)
+        # Sharing of CommonSurfaceShader occurs at exactly the same point
+        # as sharing of Material, so just keep names connected.
+        # CommonSurfaceShader gets additional prefix CSS_ .
+        common_surface_shader_id = quoteattr(CSS_ + material_id_unquoted)
 
         # look up material name, use it if available
         if material.tag:
             fw('%s<Material USE=%s />\n' % (ident, material_id))
+            if use_common_surface_shader:
+                fw('%s<CommonSurfaceShader USE=%s />\n' % (ident, common_surface_shader_id))
         else:
             material.tag = True
 
@@ -1021,6 +1031,22 @@ def export(file,
             fw(ident_step + 'shininess="%.3f"\n' % shininess)
             fw(ident_step + 'transparency="%s"\n' % transp)
             fw(ident_step + '/>\n')
+
+            if use_common_surface_shader:
+                # The base parameters of CommonSurfaceShader are *very* similar
+                # to the <Material> node generated above, so please keep their
+                # code close to each other.
+                ident_step = ident + (' ' * (-len(ident) + \
+                fw('%s<CommonSurfaceShader ' % ident)))
+                fw('DEF=%s\n' % common_surface_shader_id)
+                fw(ident_step + 'diffuseFactor="%.3f %.3f %.3f"\n' % clamp_color(diffuseColor))
+                fw(ident_step + 'specularFactor="%.3f %.3f %.3f"\n' % clamp_color(specColor))
+                fw(ident_step + 'emissiveFactor="%.3f %.3f %.3f"\n' % clamp_color(emitColor))
+                fw(ident_step + 'ambientFactor="%.3f %.3f %.3f"\n' % (ambient, ambient, ambient))
+                fw(ident_step + 'shininessFactor="%.3f"\n' % shininess)
+                fw(ident_step + 'alphaFactor="%s"\n' % material.alpha)
+                # TODO: textures
+                fw(ident_step + '/>\n')
 
     def writeMaterialH3D(ident, material, world,
                          obj, gpu_shader):
@@ -1631,6 +1657,7 @@ def save(context,
          use_compress=False,
          use_hierarchy=True,
          use_h3d=False,
+         use_common_surface_shader=False,
          global_matrix=None,
          path_mode='AUTO',
          name_decorations=True
@@ -1658,6 +1685,7 @@ def save(context,
            use_normals=use_normals,
            use_hierarchy=use_hierarchy,
            use_h3d=use_h3d,
+           use_common_surface_shader=use_common_surface_shader,
            path_mode=path_mode,
            name_decorations=name_decorations,
            )

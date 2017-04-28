@@ -2,20 +2,27 @@ The Blender X3D exporter with Kambi (Michalis Kamburelis)
 fixes and modifications.
 
 The idea is that you can replace your installed
-blender/2.78/scripts/addons/io_scene_x3d/export_x3d.py
+
+  blender/2.78/scripts/addons/io_scene_x3d/export_x3d.py
+  blender/2.78/scripts/addons/io_scene_x3d/__init__.py.py
+
 with my version.
 
 Based on 2.78 version currently (I try to keep up and always base
 on newest releaed Blender version). I also keep the original version here,
-to easily see my modifications
-(diff -u export_x3d_distributed.py export_x3d.py)
-and apply my modifications to next releases
-(diff -u export_x3d_distributed.py export_x3d.py  > a.patch
- cp -f ...new_blender_release.../export_x3d.py export_x3d.py
- cp -f ...new_blender_release.../export_x3d.py export_x3d_distributed.py
- patch export_x3d.py  < a.patch
- (assuming of course they can be applied automatically, i.e. the code
- around them didn't change upstream)).
+to easily see my modifications by:
+
+  diff -u original/export_x3d.py export_x3d.py
+  diff -u original/__init__.py __init__.py
+
+And apply my modifications to next release by:
+
+  diff -u original/export_x3d.py export_x3d.py  > a.patch
+  cp -f ...new_blender_release.../export_x3d.py export_x3d.py
+  cp -f ...new_blender_release.../export_x3d.py original/export_x3d.py
+  patch --dry-run export_x3d.py  < a.patch # check that there are no conflicts
+  patch export_x3d.py  < a.patch
+  # and repeat if with __init__.py
 
 ------------------------------------------------------------------------------
 (Old) Development notes:

@@ -130,6 +130,11 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             description="Export shaders for H3D",
             default=False,
             )
+    use_common_surface_shader = BoolProperty(
+            name="CommonSurfaceShader Extension",
+            description="Export material and textures to CommonSurfaceShader (in addition to standard Material). This is supported by at least InstantReality, X3DOM, View3dscene and Castle Game Engine. Allows to influence normal / specular / shininess / ambient by textures.",
+            default=False,
+            )
 
     axis_forward = EnumProperty(
             name="Forward",
@@ -186,6 +191,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         box.prop(self, "use_hierarchy")
         box.prop(self, "name_decorations")
         box.prop(self, "use_h3d")
+        box.prop(self, "use_common_surface_shader")
         box.prop(self, "axis_forward")
         box.prop(self, "axis_up")
         box.prop(self, "path_mode")
@@ -309,16 +315,17 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             check_existing = False,
             use_compress = False, # never compress
             # pass through our properties to X3D exporter
-            use_selection       = self.use_selection,
-            use_mesh_modifiers  = self.use_mesh_modifiers,
-            use_triangulate     = self.use_triangulate,
-            use_normals         = self.use_normals,
-            use_hierarchy       = self.use_hierarchy,
-            name_decorations    = self.name_decorations,
-            use_h3d             = self.use_h3d,
-            axis_forward        = self.axis_forward,
-            axis_up             = self.axis_up,
-            path_mode           = self.path_mode)
+            use_selection              = self.use_selection,
+            use_mesh_modifiers         = self.use_mesh_modifiers,
+            use_triangulate            = self.use_triangulate,
+            use_normals                = self.use_normals,
+            use_hierarchy              = self.use_hierarchy,
+            name_decorations           = self.name_decorations,
+            use_h3d                    = self.use_h3d,
+            use_common_surface_shader  = self.use_common_surface_shader,
+            axis_forward               = self.axis_forward,
+            axis_up                    = self.axis_up,
+            path_mode                  = self.path_mode)
 
         # read from temporary X3D file, and remove it
         with open(x3d_file_name, 'r') as x3d_contents_file:
