@@ -548,21 +548,53 @@ def export(file,
             if not mesh_materials:
                 mesh_materials = [None]
 
-            mesh_material_tex = [None] * len(mesh_materials)
-            mesh_material_mtex = [None] * len(mesh_materials)
-            mesh_material_images = [None] * len(mesh_materials)
+            mesh_material_texture_diffuse = [None] * len(mesh_materials)
+            mesh_material_texture_diffuse_slot = [None] * len(mesh_materials)
+            mesh_material_texture_diffuse_images = [None] * len(mesh_materials)
+            # Additional texture types, only for CommonSurfaceShader.
+            # Keep in alphabetic order, like on
+            # https://castle-engine.sourceforge.io/x3d_implementation_texturing_extensions.php#section_ext_common_surface_shader
+            # For now, other texture types don't need to know the _slot
+            # (or _image, which is only a shortcut).
+            mesh_material_texture_alpha = [None] * len(mesh_materials)
+            mesh_material_texture_ambient = [None] * len(mesh_materials)
+            mesh_material_texture_displacement = [None] * len(mesh_materials)
+            mesh_material_texture_displacement_factor = [None] * len(mesh_materials)
+            mesh_material_texture_normal = [None] * len(mesh_materials)
+            mesh_material_texture_shininess = [None] * len(mesh_materials)
+            mesh_material_texture_specular = [None] * len(mesh_materials)
 
             for i, material in enumerate(mesh_materials):
                 if material:
-                    for mtex in material.texture_slots:
-                        if mtex:
-                            tex = mtex.texture
-                            if tex and tex.type == 'IMAGE':
-                                image = tex.image
-                                if image:
-                                    mesh_material_tex[i] = tex
-                                    mesh_material_mtex[i] = mtex
-                                    mesh_material_images[i] = image
+                    for texture_slot in material.texture_slots:
+                        if texture_slot:
+                            tex = texture_slot.texture
+                            if tex and tex.type == 'IMAGE' and tex.image:
+                                if use_common_surface_shader:
+                                    if texture_slot.use_map_alpha and not mesh_material_texture_alpha[i]:
+                                        mesh_material_texture_alpha[i] = tex
+                                    if texture_slot.use_map_ambient and not mesh_material_texture_ambient[i]:
+                                        mesh_material_texture_ambient[i] = tex
+                                    if texture_slot.use_map_color_diffuse and not mesh_material_texture_diffuse[i]:
+                                        mesh_material_texture_diffuse[i] = tex
+                                        mesh_material_texture_diffuse_slot[i] = texture_slot
+                                        mesh_material_texture_diffuse_images[i] = tex.image
+                                    if texture_slot.use_map_displacement and not mesh_material_texture_displacement[i]:
+                                        mesh_material_texture_displacement[i] = tex
+                                        mesh_material_texture_displacement_factor[i] = texture_slot.displacement_factor
+                                    if texture_slot.use_map_normal and not mesh_material_texture_normal[i]:
+                                        mesh_material_texture_normal[i] = tex
+                                    if texture_slot.use_map_hardness and not mesh_material_texture_shininess[i]:
+                                        mesh_material_texture_shininess[i] = tex
+                                    if texture_slot.use_map_color_spec and not mesh_material_texture_specular[i]:
+                                        mesh_material_texture_specular[i] = tex
+                                else:
+                                    # if not use_common_surface_shader then
+                                    # (for backward compatibility) accept the first IMAGE texture
+                                    # (without looking at the "Influence" field) as diffuse.
+                                    mesh_material_texture_diffuse[i] = tex
+                                    mesh_material_texture_diffuse_slot[i] = texture_slot
+                                    mesh_material_texture_diffuse_images[i] = tex.image
                                     break
 
             mesh_materials_use_face_texture = [getattr(material, 'use_face_texture', True) for material in mesh_materials]
@@ -576,12 +608,12 @@ def export(file,
             if is_uv and True in mesh_materials_use_face_texture:
                 mesh_faces_image = [(fuv.image
                                      if mesh_materials_use_face_texture[mesh_faces_materials[i]]
-                                     else mesh_material_images[mesh_faces_materials[i]])
+                                     else mesh_material_texture_diffuse_images[mesh_faces_materials[i]])
                                      for i, fuv in enumerate(mesh.tessface_uv_textures.active.data)]
 
                 mesh_faces_image_unique = set(mesh_faces_image)
-            elif len(set(mesh_material_images) | {None}) > 1:  # make sure there is at least one image
-                mesh_faces_image = [mesh_material_images[material_index] for material_index in mesh_faces_materials]
+            elif len(set(mesh_material_texture_diffuse_images) | {None}) > 1:  # make sure there is at least one image
+                mesh_faces_image = [mesh_material_texture_diffuse_images[material_index] for material_index in mesh_faces_materials]
                 mesh_faces_image_unique = set(mesh_faces_image)
             else:
                 mesh_faces_image = [None] * len(mesh_faces)
@@ -671,17 +703,17 @@ def export(file,
                             if image.use_tiles:
                                 fw('%s<TextureTransform scale="%s %s" />\n' % (ident, image.tiles_x, image.tiles_y))
                         else:
-                            # transform by mtex
-                            loc = mesh_material_mtex[material_index].offset[:2]
+                            # transform by texture_slot
+                            loc = mesh_material_texture_diffuse_slot[material_index].offset[:2]
 
-                            # mtex_scale * tex_repeat
-                            sca_x, sca_y = mesh_material_mtex[material_index].scale[:2]
+                            # texture_slot.scale * tex_repeat
+                            sca_x, sca_y = mesh_material_texture_diffuse_slot[material_index].scale[:2]
 
-                            sca_x *= mesh_material_tex[material_index].repeat_x
-                            sca_y *= mesh_material_tex[material_index].repeat_y
+                            sca_x *= mesh_material_texture_diffuse[material_index].repeat_x
+                            sca_y *= mesh_material_texture_diffuse[material_index].repeat_y
 
                             # flip x/y is a sampling feature, convert to transform
-                            if mesh_material_tex[material_index].use_flip_axis:
+                            if mesh_material_texture_diffuse[material_index].use_flip_axis:
                                 rot = math.pi / -2.0
                                 sca_x, sca_y = sca_y, -sca_x
                             else:
@@ -703,7 +735,16 @@ def export(file,
                         del mat_tmp
                     else:
                         if material:
-                            writeMaterial(ident, material, world)
+                            writeMaterial(ident, material, world,
+                                mesh_material_texture_alpha[material_index],
+                                mesh_material_texture_ambient[material_index],
+                                mesh_material_texture_diffuse[material_index],
+                                mesh_material_texture_displacement[material_index],
+                                mesh_material_texture_displacement_factor[material_index],
+                                mesh_material_texture_normal[material_index],
+                                mesh_material_texture_shininess[material_index],
+                                mesh_material_texture_specular[material_index]
+                            )
 
                     ident = ident[:-1]
                     fw('%s</Appearance>\n' % ident)
@@ -980,7 +1021,20 @@ def export(file,
             ident = ident[:-1]
             fw('%s</Collision>\n' % ident)
 
-    def writeMaterial(ident, material, world):
+    # Write X3D <Material> node.
+    #
+    # If use_common_surface_shader, write also X3D <CommonSurfaceShader> node,
+    # that contains the same information as <Material>, and additionally specifies
+    # also textures for some shading parameters.
+    def writeMaterial(ident, material, world,
+                      texture_alpha,
+                      texture_ambient,
+                      texture_diffuse,
+                      texture_displacement,
+                      texture_displacement_factor,
+                      texture_normal,
+                      texture_shininess,
+                      texture_specular):
         material_id_unquoted = unique_name(material, MA_ + material.name, uuid_cache_material, clean_func=clean_def, sep="_")
         material_id = quoteattr(material_id_unquoted)
         # Sharing of CommonSurfaceShader occurs at exactly the same point
@@ -1026,7 +1080,7 @@ def export(file,
             fw(ident_step + 'emissiveColor="%.3f %.3f %.3f"\n' % clamp_color(emitColor))
             fw(ident_step + 'ambientIntensity="%.3f"\n' % ambient)
             fw(ident_step + 'shininess="%.3f"\n' % shininess)
-            fw(ident_step + 'transparency="%s"\n' % transp)
+            fw(ident_step + 'transparency="%.3s"\n' % transp)
             fw(ident_step + '/>\n')
 
             if use_common_surface_shader:
@@ -1041,9 +1095,33 @@ def export(file,
                 fw(ident_step + 'emissiveFactor="%.3f %.3f %.3f"\n' % clamp_color(emitColor))
                 fw(ident_step + 'ambientFactor="%.3f %.3f %.3f"\n' % (ambient, ambient, ambient))
                 fw(ident_step + 'shininessFactor="%.3f"\n' % shininess)
-                fw(ident_step + 'alphaFactor="%s"\n' % material.alpha)
-                # TODO: textures
-                fw(ident_step + '/>\n')
+                fw(ident_step + 'alphaFactor="%.3s"\n' % material.alpha)
+                if texture_displacement_factor:
+                    # The displacementFactor is expressed in 0..255 range in X3D
+                    fw(ident_step + 'displacementFactor="%.3s"\n' % (texture_displacement_factor * 255.0))
+                fw(ident_step + '>\n')
+
+                ident += '\t'
+
+                # textures inside CommonSurfaceShader
+                if texture_alpha:
+                    writeImageTexture(ident, texture_alpha.image, "alphaTexture")
+                if texture_ambient:
+                    writeImageTexture(ident, texture_ambient.image, "ambientTexture")
+                if texture_diffuse:
+                    writeImageTexture(ident, texture_diffuse.image, "diffuseTexture")
+                if texture_displacement:
+                    writeImageTexture(ident, texture_displacement.image, "displacementTexture")
+                if texture_normal:
+                    writeImageTexture(ident, texture_normal.image, "normalTexture")
+                if texture_shininess:
+                    writeImageTexture(ident, texture_shininess.image, "shininessTexture")
+                if texture_specular:
+                    writeImageTexture(ident, texture_specular.image, "specularTexture")
+
+                ident = ident[:-1]
+
+                fw('%s</CommonSurfaceShader>\n' % ident)
 
     def writeMaterialH3D(ident, material, world,
                          obj, gpu_shader):
@@ -1323,11 +1401,16 @@ def export(file,
 
             fw('%s</ComposedShader>\n' % ident)
 
-    def writeImageTexture(ident, image):
+    # Write <ImageTexture>, based on Blender Image instance
+    def writeImageTexture(ident, image, container_field = None):
         image_id = quoteattr(unique_name(image, IM_ + image.name, uuid_cache_image, clean_func=clean_def, sep="_"))
+        if container_field:
+            container_field_complete = 'containerField="' + container_field + '" '
+        else:
+            container_field_complete = ''
 
         if image.tag:
-            fw('%s<ImageTexture USE=%s />\n' % (ident, image_id))
+            fw('%s<ImageTexture USE=%s %s/>\n' % (ident, image_id, container_field_complete))
         else:
             image.tag = True
 
@@ -1357,7 +1440,7 @@ def export(file,
                 fw(ident_step + "repeatS='false'\n")
             if image.use_clamp_y:
                 fw(ident_step + "repeatT='false'\n")
-            fw(ident_step + '/>\n')
+            fw(ident_step + '%s/>\n' % container_field_complete)
 
     def writeBackground(ident, world):
 
