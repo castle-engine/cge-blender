@@ -300,9 +300,6 @@ def export(file,
         gpu_shader_cache[None] = gpu.export_shader(scene, gpu_shader_dummy_mat)
         h3d_material_route = []
 
-    # store Image references that were printed *and* had normalmaps
-    images_with_normalmap = []
-
     # -------------------------------------------------------------------------
     # File Writing Functions
     # -------------------------------------------------------------------------
@@ -1331,8 +1328,6 @@ def export(file,
 
         if image.tag:
             fw('%s<ImageTexture USE=%s />\n' % (ident, image_id))
-            if image in images_with_normalmap:
-                fw("%s<ImageTexture USE=\"%s_normalmap\" containerField=\"normalMap\" />\n" % (ident, image.name))
         else:
             image.tag = True
 
@@ -1363,33 +1358,6 @@ def export(file,
             if image.use_clamp_y:
                 fw(ident_step + "repeatT='false'\n")
             fw(ident_step + '/>\n')
-
-            # Calculate normalmap path (with _normalmap suffix in name),
-            # and use it if exists. Also append to images_with_normalmap
-            # (needed for proper behavior when this texture is USEd).
-            #
-            # Old docs:
-            #
-            # We automatically check for existence of normalmap file for bump mapping:
-            # we take normal texture filename (like "textures/image.png"),
-            # add "_normalmap" right before extension (making e.g. "textures/image_normalmap.png"),
-            # and look if it exists relative to your exported filename dir.
-            # So in the above example, you want to have exported X3D model to be in
-            # the same directory as "textures" (and "textures" should contain
-            # image.png and image_normalmap.png).
-            # If such file is found, we use it
-            # (http://castle-engine.sourceforge.net/x3d_extensions.php#section_ext_bump_mapping).
-            # This requires "Castle Game Engine" extensions for bump mapping,
-            # so open e.g. with view3dscene.
-            #
-            (path_before_ext,path_ext) = os.path.splitext(filepath_ref)
-            normalmap_path = path_before_ext + '_normalmap' + path_ext
-            if os.path.exists(os.path.join(base_dst, normalmap_path)):
-                images_with_normalmap.append(image)
-                print('Found normalmap under %s, using. DEPRECATED: we do not advice using our exporter this way. Better use material_properties.xml to assign normalmaps to X3D exported from Blender.' % normalmap_path)
-                fw("%s<ImageTexture DEF=\"%s_normalmap\" containerField=\"normalMap\" url=\'\"%s\"\' />\n" % (ident, image.name, normalmap_path))
-            else:
-                normalmap_path = None
 
     def writeBackground(ident, world):
 
