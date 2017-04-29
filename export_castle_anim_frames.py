@@ -48,6 +48,7 @@ from bpy_extras.io_utils import path_reference_mode
 from bpy_extras.io_utils import axis_conversion
 from bpy.props import *
 from mathutils import Vector
+import addon_utils
 
 class ExportCastleAnimFrames(bpy.types.Operator):
     """Export the animation to Castle Animation Frames (castle-anim-frames) format"""
@@ -311,21 +312,39 @@ class ExportCastleAnimFrames(bpy.types.Operator):
            bounding_box_size  [0], bounding_box_size  [1], bounding_box_size  [2]))
 
         # write X3D with animation frame
-        bpy.ops.export_scene.x3d(filepath=x3d_file_name,
-            check_existing = False,
-            use_compress = False, # never compress
-            # pass through our properties to X3D exporter
-            use_selection              = self.use_selection,
-            use_mesh_modifiers         = self.use_mesh_modifiers,
-            use_triangulate            = self.use_triangulate,
-            use_normals                = self.use_normals,
-            use_hierarchy              = self.use_hierarchy,
-            name_decorations           = self.name_decorations,
-            use_h3d                    = self.use_h3d,
-            use_common_surface_shader  = self.use_common_surface_shader,
-            axis_forward               = self.axis_forward,
-            axis_up                    = self.axis_up,
-            path_mode                  = self.path_mode)
+        (castle_engine_x3d_loaded_default, castle_engine_x3d_loaded_state) = \
+            addon_utils.check('castle_engine_x3d')
+        if castle_engine_x3d_loaded_state:
+            bpy.ops.castle_export_scene.x3d(filepath=x3d_file_name,
+                check_existing = False,
+                use_compress = False, # never compress
+                # pass through our properties to X3D exporter
+                use_selection              = self.use_selection,
+                use_mesh_modifiers         = self.use_mesh_modifiers,
+                use_triangulate            = self.use_triangulate,
+                use_normals                = self.use_normals,
+                use_hierarchy              = self.use_hierarchy,
+                name_decorations           = self.name_decorations,
+                use_h3d                    = self.use_h3d,
+                use_common_surface_shader  = self.use_common_surface_shader,
+                axis_forward               = self.axis_forward,
+                axis_up                    = self.axis_up,
+                path_mode                  = self.path_mode)
+        else:
+            bpy.ops.export_scene.x3d(filepath=x3d_file_name,
+                check_existing = False,
+                use_compress = False, # never compress
+                # pass through our properties to X3D exporter
+                use_selection              = self.use_selection,
+                use_mesh_modifiers         = self.use_mesh_modifiers,
+                use_triangulate            = self.use_triangulate,
+                use_normals                = self.use_normals,
+                use_hierarchy              = self.use_hierarchy,
+                name_decorations           = self.name_decorations,
+                use_h3d                    = self.use_h3d,
+                axis_forward               = self.axis_forward,
+                axis_up                    = self.axis_up,
+                path_mode                  = self.path_mode)
 
         # read from temporary X3D file, and remove it
         with open(x3d_file_name, 'r') as x3d_contents_file:
