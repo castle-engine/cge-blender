@@ -1,10 +1,9 @@
 #!/bin/bash
 set -eu
 
+# Easy installation, for devs.
 # Just copy this script in place.
 # Adjust path below to your blender installation.
-# If you know how to make it generally usable, report
-# (what is the generic dir name under $HOME, regardless of Blender version?).
 
 BLENDER_VERSION='2.78'
 

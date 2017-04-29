@@ -19,15 +19,14 @@
 # <pep8-80 compliant>
 
 bl_info = {
-    "name": "Web3D X3D/VRML2 format",
-    "author": "Campbell Barton, Bart, Bastien Montagne, Seva Alekseyev",
+    "name": "Web3D X3D/VRML2 format (Castle Game Engine Importer/Exporter)",
+    "author": "Campbell Barton, Bart, Bastien Montagne, Seva Alekseyev, Michalis Kamburelis",
     "version": (1, 2, 0),
     "blender": (2, 76, 0),
     "location": "File > Import-Export",
-    "description": "Import-Export X3D, Import VRML2",
+    "description": "Import-Export X3D",
     "warning": "",
-    "wiki_url": "http://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Import-Export/Web3D",
-    "support": 'OFFICIAL',
+    "wiki_url": "https://github.com/castle-engine/castle-engine/wiki/Blender",
     "category": "Import-Export",
 }
 
@@ -59,7 +58,7 @@ IOX3DOrientationHelper = orientation_helper_factory("IOX3DOrientationHelper", ax
 
 class ImportX3D(bpy.types.Operator, ImportHelper, IOX3DOrientationHelper):
     """Import an X3D or VRML2 file"""
-    bl_idname = "import_scene.x3d"
+    bl_idname = "castle_import_scene.x3d"
     bl_label = "Import X3D/VRML2"
     bl_options = {'PRESET', 'UNDO'}
 
@@ -83,7 +82,7 @@ class ImportX3D(bpy.types.Operator, ImportHelper, IOX3DOrientationHelper):
 
 class ExportX3D(bpy.types.Operator, ExportHelper, IOX3DOrientationHelper):
     """Export selection to Extensible 3D file (.x3d)"""
-    bl_idname = "export_scene.x3d"
+    bl_idname = "castle_export_scene.x3d"
     bl_label = 'Export X3D'
     bl_options = {'PRESET'}
 
@@ -166,12 +165,12 @@ class ExportX3D(bpy.types.Operator, ExportHelper, IOX3DOrientationHelper):
 
 def menu_func_import(self, context):
     self.layout.operator(ImportX3D.bl_idname,
-                         text="X3D Extensible 3D (.x3d/.wrl)")
+                         text="X3D Extensible 3D (.x3d/.wrl) (Castle Game Engine Importer)")
 
 
 def menu_func_export(self, context):
     self.layout.operator(ExportX3D.bl_idname,
-                         text="X3D Extensible 3D (.x3d)")
+                         text="X3D Extensible 3D (.x3d) (Castle Game Engine Exporter)")
 
 
 def register():

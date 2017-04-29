@@ -3,8 +3,7 @@ fixes and modifications.
 
 The idea is that you can replace your installed
 
-  blender/2.78/scripts/addons/io_scene_x3d/export_x3d.py
-  blender/2.78/scripts/addons/io_scene_x3d/__init__.py.py
+  blender/2.78/scripts/addons/io_scene_x3d/*.py
 
 with my version.
 
@@ -12,17 +11,15 @@ Based on 2.78 version currently (I try to keep up and always base
 on newest releaed Blender version). I also keep the original version here,
 to easily see my modifications by:
 
-  diff -u original/export_x3d.py export_x3d.py
-  diff -u original/__init__.py __init__.py
+  diff -u original/ castle_engine_x3d/
 
 And apply my modifications to next release by:
 
-  diff -u original/export_x3d.py export_x3d.py  > a.patch
-  cp -f ...new_blender_release.../export_x3d.py export_x3d.py
-  cp -f ...new_blender_release.../export_x3d.py original/export_x3d.py
-  patch --dry-run export_x3d.py  < a.patch # check that there are no conflicts
-  patch export_x3d.py  < a.patch
-  # and repeat if with __init__.py
+  diff -ur original/ castle_engine_x3d/  > a.patch
+  cp -f <blender>/2.XX/scripts/addons/io_scene_x3d/*.py castle_engine_x3d/
+  cp -f <blender>/2.XX/scripts/addons/io_scene_x3d/*.py original/
+  patch --dry-run -p0  < a.patch # check that there are no conflicts
+  patch -p0  < a.patch
 
 ------------------------------------------------------------------------------
 (Old) Development notes:
