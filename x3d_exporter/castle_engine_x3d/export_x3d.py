@@ -1080,7 +1080,7 @@ def export(file,
             fw(ident_step + 'emissiveColor="%.3f %.3f %.3f"\n' % clamp_color(emitColor))
             fw(ident_step + 'ambientIntensity="%.3f"\n' % ambient)
             fw(ident_step + 'shininess="%.3f"\n' % shininess)
-            fw(ident_step + 'transparency="%.3s"\n' % transp)
+            fw(ident_step + 'transparency="%.3f"\n' % transp)
             fw(ident_step + '/>\n')
 
             if use_common_surface_shader:
@@ -1095,10 +1095,16 @@ def export(file,
                 fw(ident_step + 'emissiveFactor="%.3f %.3f %.3f"\n' % clamp_color(emitColor))
                 fw(ident_step + 'ambientFactor="%.3f %.3f %.3f"\n' % (ambient, ambient, ambient))
                 fw(ident_step + 'shininessFactor="%.3f"\n' % shininess)
-                fw(ident_step + 'alphaFactor="%.3s"\n' % material.alpha)
+                fw(ident_step + 'alphaFactor="%.3f"\n' % material.alpha)
                 if texture_displacement_factor:
-                    # The displacementFactor is expressed in 0..255 range in X3D
-                    fw(ident_step + 'displacementFactor="%.3s"\n' % (texture_displacement_factor * 255.0))
+                    fw(ident_step + 'displacementFactor="%.3f"\n' % texture_displacement_factor)
+                    # Set the same value for Castle Game Engine normalTextureParallaxHeight.
+                    #
+                    # The effect of Castle Game Engine (parallax bump mapping)
+                    # and X3DOM displacement are different effects, and often require different
+                    # settings... but it makes sense to export both as equal from Blender,
+                    # to allow users of both programs to be able to control these effects.
+                    fw(ident_step + 'normalTextureParallaxHeight="%.3f"\n' % texture_displacement_factor)
                 fw(ident_step + '>\n')
 
                 ident += '\t'
