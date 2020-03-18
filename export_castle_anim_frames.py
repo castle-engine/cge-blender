@@ -32,7 +32,7 @@ bl_info = {
     "author": "Michalis Kamburelis",
     "version": (1, 0),
     # user_of_id is only available in Blender >= 2.77
-    "blender": (2, 77, 0),
+    "blender": (2, 80, 0),
     "location": "File > Export > Castle Animation Frames (.castle-anim-frames)",
     "warning": "", # used for warning icon and text in addons panel
     # Note: this should only lead to official Blender wiki.
@@ -44,12 +44,16 @@ bl_info = {
 
 import bpy
 import os
-from bpy_extras.io_utils import path_reference_mode
-from bpy_extras.io_utils import axis_conversion
+from bpy_extras.io_utils import (
+    orientation_helper,
+    path_reference_mode,
+    axis_conversion,
+    )
 from bpy.props import *
 from mathutils import Vector
 import addon_utils
 
+@orientation_helper(axis_forward='Z', axis_up='Y')
 class ExportCastleAnimFrames(bpy.types.Operator):
     """Export the animation to Castle Animation Frames (castle-anim-frames) format"""
     bl_idname = "export.castle_anim_frames"
@@ -58,16 +62,16 @@ class ExportCastleAnimFrames(bpy.types.Operator):
     # ------------------------------------------------------------------------
     # properties for interaction with fileselect_add
 
-    filepath = StringProperty(subtype="FILE_PATH")
+    filepath: StringProperty(subtype="FILE_PATH")
     # for some reason,
     # filter "*.castle-anim-frames" doesn't work correctly (hides all files),
     # so use "*.castle*"
-    filter_glob = StringProperty(default="*.castle*", options={'HIDDEN'})
+    filter_glob: StringProperty(default="*.castle*", options={'HIDDEN'})
 
     # ------------------------------------------------------------------------
     # properties special for castle-anim-frames export
 
-    frame_skip = IntProperty(name="Frames to skip",
+    frame_skip: IntProperty(name="Frames to skip",
         # As part of exporting to castle-anim-frames, we export each still
         # frame to X3D. We iterate over all animation frames, from the start,
         # exporting it and skipping this number of following frames.
@@ -79,13 +83,13 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         description="How many frames to skip between the exported frames. The Castle Game Engine using castle-anim-frames format will reconstruct these frames using linear interpolation.",
             default=4, min=0, max=50)
 
-    actions_object = StringProperty(
+    actions_object: StringProperty(
             name="Actions",
             description="If set, we will export all the actions of a given object. Leave empty to instead export the current animation from Start to End.",
             default='',
             )
 
-    make_duplicates_real = BoolProperty(
+    make_duplicates_real: BoolProperty(
             name="Make Duplicates Real",
             description="This option allows to export particles (and other things not exportable to X3D without a \"Make Duplicates Real\" call).",
             default=False,
@@ -95,73 +99,51 @@ class ExportCastleAnimFrames(bpy.types.Operator):
     # properies passed through to the X3D exporter,
     # definition copied from io_scene_x3d/__init__.py
 
-    use_selection = BoolProperty(
+    use_selection: BoolProperty(
             name="Selection Only",
             description="Export selected objects only",
             default=False,
             )
-    use_mesh_modifiers = BoolProperty(
+    use_mesh_modifiers: BoolProperty(
             name="Apply Modifiers",
             description="Use transformed mesh data from each object",
             default=True,
             )
-    use_triangulate = BoolProperty(
+    use_triangulate: BoolProperty(
             name="Triangulate",
             description="Write quads into 'IndexedTriangleSet'",
             default=False,
             )
-    use_normals = BoolProperty(
+    use_normals: BoolProperty(
             name="Normals",
             description="Write normals with geometry",
             default=False,
             )
-    use_hierarchy = BoolProperty(
+    use_hierarchy: BoolProperty(
             name="Hierarchy",
             description="Export parent child relationships",
             default=True,
             )
-    name_decorations = BoolProperty(
+    name_decorations: BoolProperty(
             name="Name decorations",
             description=("Add prefixes to the names of exported nodes to "
                          "indicate their type"),
             default=True,
             )
-    use_h3d = BoolProperty(
+    use_h3d: BoolProperty(
             name="H3D Extensions",
             description="Export shaders for H3D",
             default=False,
             )
-    use_common_surface_shader = BoolProperty(
-            name="CommonSurfaceShader Extension",
-            description="Export material and textures to CommonSurfaceShader (in addition to standard Material). This is supported by at least InstantReality, X3DOM, View3dscene and Castle Game Engine. Allows to influence normal / specular / shininess / ambient by textures.",
-            default=False,
-            )
 
-    axis_forward = EnumProperty(
-            name="Forward",
-            items=(('X', "X Forward", ""),
-                   ('Y', "Y Forward", ""),
-                   ('Z', "Z Forward", ""),
-                   ('-X', "-X Forward", ""),
-                   ('-Y', "-Y Forward", ""),
-                   ('-Z', "-Z Forward", ""),
-               ),
-        default='Z',
-        )
+    # Not in vanilla Blender exporter in Blender 2.8.
+    # use_common_surface_shader: BoolProperty(
+    #         name="CommonSurfaceShader Extension",
+    #         description="Export material and textures to CommonSurfaceShader (in addition to standard Material). This is supported by at least InstantReality, X3DOM, View3dscene and Castle Game Engine. Allows to influence normal / specular / shininess / ambient by textures.",
+    #         default=False,
+    #         )
 
-    axis_up = EnumProperty(
-            name="Up",
-            items=(('X', "X Up", ""),
-                   ('Y', "Y Up", ""),
-                   ('Z', "Z Up", ""),
-                   ('-X', "-X Up", ""),
-                   ('-Y', "-Y Up", ""),
-                   ('-Z', "-Z Up", ""),
-                   ),
-            default='Y',
-            )
-
-    path_mode = path_reference_mode
+    path_mode: path_reference_mode
 
     # methods ----------------------------------------------------------------
 
@@ -171,7 +153,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         layout = self.layout
 
         box = layout.box()
-        box.label("Animation settings:")
+        box.label(text="Animation settings:")
 
         # use prop_search to select an object,
         # see http://blender.stackexchange.com/questions/7973/object-selection-box-in-addon
@@ -184,7 +166,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         box.prop(self, "make_duplicates_real")
 
         box = layout.box()
-        box.label("X3D settings:")
+        box.label(text="X3D settings:")
         box.prop(self, "use_selection")
         box.prop(self, "use_mesh_modifiers")
         box.prop(self, "use_triangulate")
@@ -192,7 +174,8 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         box.prop(self, "use_hierarchy")
         box.prop(self, "name_decorations")
         box.prop(self, "use_h3d")
-        box.prop(self, "use_common_surface_shader")
+        # Not in vanilla Blender exporter in Blender 2.8.
+        # box.prop(self, "use_common_surface_shader")
         box.prop(self, "axis_forward")
         box.prop(self, "axis_up")
         box.prop(self, "path_mode")
@@ -226,9 +209,9 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         scene_box_max = (0.0, 0.0, 0.0)
 
         if self.use_selection:
-            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene) and obj.select]
+            objects = [obj for obj in context.scene.objects if obj.select_get()]
         else:
-            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene)]
+            objects = [obj for obj in context.scene.objects]
 
         global_matrix = axis_conversion(to_forward=self.axis_forward, to_up=self.axis_up).to_4x4()
 
@@ -239,7 +222,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
                 # world-space bounding box calculation,
                 # see blender/2.78/scripts/addons/object_fracture_cell/fracture_cell_setup.py
                 # and http://blender.stackexchange.com/questions/8459/get-blender-x-y-z-and-bounding-box-with-script
-                object_box_points = [global_matrix * ob.matrix_world * Vector(corner) for corner in ob.bound_box]
+                object_box_points = [global_matrix @ ob.matrix_world @ Vector(corner) for corner in ob.bound_box]
 
                 # calculate object_box_min/max
                 object_box_min = (object_box_points[0].x, object_box_points[0].y,  object_box_points[0].z)
@@ -326,7 +309,8 @@ class ExportCastleAnimFrames(bpy.types.Operator):
                 use_hierarchy              = self.use_hierarchy,
                 name_decorations           = self.name_decorations,
                 use_h3d                    = self.use_h3d,
-                use_common_surface_shader  = self.use_common_surface_shader,
+                # Not in vanilla Blender exporter in Blender 2.8.
+                # use_common_surface_shader  = self.use_common_surface_shader,
                 axis_forward               = self.axis_forward,
                 axis_up                    = self.axis_up,
                 path_mode                  = self.path_mode)
@@ -435,9 +419,9 @@ class ExportCastleAnimFrames(bpy.types.Operator):
     # Returns string (object mame, or '' if not found).
     def get_default_actions_object(self, context):
         if self.use_selection:
-            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene) and obj.select]
+            objects = [obj for obj in context.scene.objects if obj.select_get()]
         else:
-            objects = [obj for obj in context.scene.objects if obj.is_visible(context.scene)]
+            objects = [obj for obj in context.scene.objects]
         more_than_one_armature = False
         armature = None
         for ob in objects:
@@ -520,8 +504,8 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
             selected_count = 0
             for ob in context.scene.objects:
-                ob.select = (ob in new_objects) and (ob not in self.old_objects)
-                if ob.select:
+                ob.select_set((ob in new_objects) and (ob not in self.old_objects))
+                if ob.select_get():
                     selected_count = selected_count + 1
             if selected_count != len(duplicated_objects):
                 raise Exception("Error: we did not select as many as expected, submit a bug")
@@ -540,11 +524,11 @@ def menu_func(self, context):
 
 def register():
     bpy.utils.register_class(ExportCastleAnimFrames)
-    bpy.types.INFO_MT_file_export.append(menu_func)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func)
 
 def unregister():
     bpy.utils.unregister_class(ExportCastleAnimFrames)
-    bpy.types.INFO_MT_file_export.remove(menu_func)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func)
 
 if __name__ == "__main__":
     register()
