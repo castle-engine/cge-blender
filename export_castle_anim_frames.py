@@ -204,14 +204,15 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         (see http://michalis.ii.uni.wroc.pl/cge-www-preview/castle_animation_frames.php).
         """
 
+        view_layer = context.view_layer
         scene_box_empty = True
         scene_box_min = (0.0, 0.0, 0.0)
         scene_box_max = (0.0, 0.0, 0.0)
 
         if self.use_selection:
-            objects = [obj for obj in context.scene.objects if obj.select_get()]
+            objects = [obj for obj in context.scene.objects if obj.visible_get(view_layer=view_layer) and obj.select_get(view_layer=view_layer)]
         else:
-            objects = [obj for obj in context.scene.objects]
+            objects = [obj for obj in context.scene.objects if obj.visible_get(view_layer=view_layer)]
 
         global_matrix = axis_conversion(to_forward=self.axis_forward, to_up=self.axis_up).to_4x4()
 
@@ -418,10 +419,11 @@ class ExportCastleAnimFrames(bpy.types.Operator):
     # Calculate the default object from which we should take actions.
     # Returns string (object mame, or '' if not found).
     def get_default_actions_object(self, context):
+        view_layer = context.view_layer
         if self.use_selection:
-            objects = [obj for obj in context.scene.objects if obj.select_get()]
+            objects = [obj for obj in context.scene.objects if obj.visible_get(view_layer=view_layer) and obj.select_get(view_layer=view_layer)]
         else:
-            objects = [obj for obj in context.scene.objects]
+            objects = [obj for obj in context.scene.objects if obj.visible_get(view_layer=view_layer)]
         more_than_one_armature = False
         armature = None
         for ob in objects:
