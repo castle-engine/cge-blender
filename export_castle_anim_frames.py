@@ -263,6 +263,38 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
         return (scene_box_center, scene_box_size)
 
+    def fix_scene_before_x3d_export(self, context):
+        """Fix the Blender scene before exporting.
+
+        Blender 2.8 has a weird bug: running bpy.ops.export_scene.x3d
+        one after another (which is normal for this script), the export process
+        will think that some materials have already been written
+        (and will use <Material USE="XXX" /> instead of <Material DEF="XXX" diffuseColor="..." ... />).
+        This occurs only when mesh is obtained by to_mesh().
+        It seems that Blender cashes this mesh (even despite calling to_mesh_clear()
+        in export_x3d.py) and also materials (or at least tags?) are copied
+        (instead of being only references to same things as in bpy.data.materials).
+        In effect the material.tag values are retained across many
+        bpy.ops.export_scene.x3d calls, and even bpy.data.materials.tag(False)
+        doesn't help to reset them.
+        """
+
+        depsgraph = context.evaluated_depsgraph_get()
+        for obj in bpy.data.objects:
+            uses_temporary_mesh = False
+            # The logic when to set uses_temporary_mesh follows X3D exporter
+            if obj.type in {'MESH', 'CURVE', 'SURFACE', 'FONT'}:
+                if (obj.type != 'MESH') or (self.use_mesh_modifiers and obj.is_modified(context.scene, 'PREVIEW')):
+                    uses_temporary_mesh = True
+            if uses_temporary_mesh:
+                obj_for_mesh = obj.evaluated_get(depsgraph) if self.use_mesh_modifiers else obj
+                mesh = obj_for_mesh.to_mesh()
+                for mat in mesh.materials:
+                    if mat.tag:
+                        print("Workarounding Blender 2.8 bug with materials tag not reset for %s" % mat.name)
+                        mat.tag = False
+                obj.to_mesh_clear()
+
     def output_frame(self, context, output_file, frame, frame_start):
         """Output a given frame to a single X3D file, and add <frame...> line to
         castle-anim-frames file.
@@ -295,41 +327,47 @@ class ExportCastleAnimFrames(bpy.types.Operator):
            bounding_box_center[0], bounding_box_center[1], bounding_box_center[2],
            bounding_box_size  [0], bounding_box_size  [1], bounding_box_size  [2]))
 
+        # Old code to use our custom X3D exporter, if available.
+        # We don't maintain our custom X3D exporter for Blender 2.8 anymore.
+        #
+        # (castle_engine_x3d_loaded_default, castle_engine_x3d_loaded_state) = \
+        #     addon_utils.check('castle_engine_x3d')
+        # if castle_engine_x3d_loaded_state:
+        #     bpy.ops.castle_export_scene.x3d(filepath=x3d_file_name,
+        #         check_existing = False,
+        #         use_compress = False, # never compress
+        #         # pass through our properties to X3D exporter
+        #         use_selection              = self.use_selection,
+        #         use_mesh_modifiers         = self.use_mesh_modifiers,
+        #         use_triangulate            = self.use_triangulate,
+        #         use_normals                = self.use_normals,
+        #         use_hierarchy              = self.use_hierarchy,
+        #         name_decorations           = self.name_decorations,
+        #         use_h3d                    = self.use_h3d,
+        #         # Not in vanilla Blender exporter in Blender 2.8.
+        #         # use_common_surface_shader  = self.use_common_surface_shader,
+        #         axis_forward               = self.axis_forward,
+        #         axis_up                    = self.axis_up,
+        #         path_mode                  = self.path_mode)
+        # else:
+
+        self.fix_scene_before_x3d_export(context)
+
         # write X3D with animation frame
-        (castle_engine_x3d_loaded_default, castle_engine_x3d_loaded_state) = \
-            addon_utils.check('castle_engine_x3d')
-        if castle_engine_x3d_loaded_state:
-            bpy.ops.castle_export_scene.x3d(filepath=x3d_file_name,
-                check_existing = False,
-                use_compress = False, # never compress
-                # pass through our properties to X3D exporter
-                use_selection              = self.use_selection,
-                use_mesh_modifiers         = self.use_mesh_modifiers,
-                use_triangulate            = self.use_triangulate,
-                use_normals                = self.use_normals,
-                use_hierarchy              = self.use_hierarchy,
-                name_decorations           = self.name_decorations,
-                use_h3d                    = self.use_h3d,
-                # Not in vanilla Blender exporter in Blender 2.8.
-                # use_common_surface_shader  = self.use_common_surface_shader,
-                axis_forward               = self.axis_forward,
-                axis_up                    = self.axis_up,
-                path_mode                  = self.path_mode)
-        else:
-            bpy.ops.export_scene.x3d(filepath=x3d_file_name,
-                check_existing = False,
-                use_compress = False, # never compress
-                # pass through our properties to X3D exporter
-                use_selection              = self.use_selection,
-                use_mesh_modifiers         = self.use_mesh_modifiers,
-                use_triangulate            = self.use_triangulate,
-                use_normals                = self.use_normals,
-                use_hierarchy              = self.use_hierarchy,
-                name_decorations           = self.name_decorations,
-                use_h3d                    = self.use_h3d,
-                axis_forward               = self.axis_forward,
-                axis_up                    = self.axis_up,
-                path_mode                  = self.path_mode)
+        bpy.ops.export_scene.x3d(filepath=x3d_file_name,
+            check_existing = False,
+            use_compress = False, # never compress
+            # pass through our properties to X3D exporter
+            use_selection              = self.use_selection,
+            use_mesh_modifiers         = self.use_mesh_modifiers,
+            use_triangulate            = self.use_triangulate,
+            use_normals                = self.use_normals,
+            use_hierarchy              = self.use_hierarchy,
+            name_decorations           = self.name_decorations,
+            use_h3d                    = self.use_h3d,
+            axis_forward               = self.axis_forward,
+            axis_up                    = self.axis_up,
+            path_mode                  = self.path_mode)
 
         # read from temporary X3D file, and remove it
         with open(x3d_file_name, 'r') as x3d_contents_file:
