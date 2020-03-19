@@ -19,27 +19,26 @@
 # This script exports from Blender to castle-anim-frames format,
 # which stands for "Castle Game Engine's Animation Frames".
 # The format specification is on
-# http://castle-engine.sourceforge.net/castle_animation_frames.php
-# Each still frame is exported to a separate X3D graph.
-# We call actual Blender X3D exporter to do this.
+# https://castle-engine.io/castle_animation_frames.php
+# Each still frame is exported to a static frame (as X3D or glTF).
+# We call actual Blender X3D/glTF exporter to do this.
 #
 # The latest version of this script can be found on
-# http://castle-engine.sourceforge.net/creating_data_blender.php
+# https://castle-engine.io/creating_data_blender.php
 
 bl_info = {
     "name": "Export Castle Animation Frames",
     "description": "Export animation to Castle Game Engine's Animation Frames format.",
     "author": "Michalis Kamburelis",
-    "version": (1, 0),
-    # user_of_id is only available in Blender >= 2.77
+    "version": (2, 0),
     "blender": (2, 80, 0),
     "location": "File > Export > Castle Animation Frames (.castle-anim-frames)",
     "warning": "", # used for warning icon and text in addons panel
     # Note: this should only lead to official Blender wiki.
     # But since this script (probably) will not be official part of Blender,
     # we can overuse it. Normal "link:" item is not visible in addons window.
-    "wiki_url": "http://castle-engine.sourceforge.net/blender.php",
-    "link": "http://castle-engine.sourceforge.net/blender.php",
+    "wiki_url": "https://castle-engine.io/creating_data_blender.php",
+    "link": "https://castle-engine.io/creating_data_blender.php",
     "category": "Import-Export"}
 
 import bpy
@@ -73,7 +72,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
     frame_skip: IntProperty(name="Frames to skip",
         # As part of exporting to castle-anim-frames, we export each still
-        # frame to X3D. We iterate over all animation frames, from the start,
+        # frame to another format. We iterate over all animation frames, from the start,
         # exporting it and skipping this number of following frames.
         # Smaller values mean less files (less disk usage, faster animation
         # loading in game) but also worse quality (as castle-anim-frames loader in game
@@ -91,13 +90,28 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
     make_duplicates_real: BoolProperty(
             name="Make Duplicates Real",
-            description="This option allows to export particles (and other things not exportable to X3D without a \"Make Duplicates Real\" call).",
+            description="This option allows to export particles (and other things not exportable without a \"Make Duplicates Real\" call).",
             default=False,
             )
 
+    frame_format: EnumProperty(
+        name='Format',
+        items=(('GLTF', 'glTF',
+                'Export each static frame using glTF exporter. This is more functional in general, as glTF exporter can handle normal maps, PBR materials, unlit materials etc.'),
+               ('X3D', 'X3D',
+                'Export each static frame using X3D exporter. This is less functional in general, as current X3D exporter misses various features.')),
+        description=(
+            'Each static frame is recorded using another exporter, to X3D or glTF.'
+        ),
+        default='GLTF'
+    )
+
     # ------------------------------------------------------------------------
-    # properies passed through to the X3D exporter,
+    # properies passed through to the X3D/glTF exporter,
     # definition copied from io_scene_x3d/__init__.py
+
+    # TODO: remove most of these, keep only ones that make sense for both X3D and glTF.
+    # TODO: axis convert into simple boolean "Y Up?".
 
     use_selection: BoolProperty(
             name="Selection Only",
@@ -136,13 +150,6 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             default=False,
             )
 
-    # Not in vanilla Blender exporter in Blender 2.8.
-    # use_common_surface_shader: BoolProperty(
-    #         name="CommonSurfaceShader Extension",
-    #         description="Export material and textures to CommonSurfaceShader (in addition to standard Material). This is supported by at least InstantReality, X3DOM, View3dscene and Castle Game Engine. Allows to influence normal / specular / shininess / ambient by textures.",
-    #         default=False,
-    #         )
-
     path_mode: path_reference_mode
 
     # methods ----------------------------------------------------------------
@@ -164,6 +171,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
 
         box.prop(self, "frame_skip")
         box.prop(self, "make_duplicates_real")
+        box.prop(self, "frame_format")
 
         box = layout.box()
         box.label(text="X3D settings:")
@@ -174,8 +182,6 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         box.prop(self, "use_hierarchy")
         box.prop(self, "name_decorations")
         box.prop(self, "use_h3d")
-        # Not in vanilla Blender exporter in Blender 2.8.
-        # box.prop(self, "use_common_surface_shader")
         box.prop(self, "axis_forward")
         box.prop(self, "axis_up")
         box.prop(self, "path_mode")
@@ -295,66 +301,17 @@ class ExportCastleAnimFrames(bpy.types.Operator):
                         mat.tag = False
                 obj.to_mesh_clear()
 
-    def output_frame(self, context, output_file, frame, frame_start):
-        """Output a given frame to a single X3D file, and add <frame...> line to
-        castle-anim-frames file.
-
-        Arguments:
-        output_file   -- the handle to write xxx.castle-anim-frames file,
-                         to add <frame...> line.
-        frame         -- current frame number.
-        frame_start   -- the start frame number, used to shift frame times
-                         such that castle-anim-frames animation starts from time = 0.0.
-        """
+    def output_frame_x3d(self, context, output_file):
+        """Append a given frame to output_file in X3D format."""
 
         # calculate filenames stuff
         (output_dir, output_basename) = os.path.split(self.filepath)
-        x3d_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.x3d")
-
-        # set the animation frame (before calculating bounding box
-        # and making duplicates real)
-        context.scene.frame_set(frame)
-
-        if self.make_duplicates_real:
-            self.make_duplicates_real_before(context)
-
-        # calculate bounding box in world space
-        (bounding_box_center, bounding_box_size) = self.get_current_bounding_box(context)
-
-        # write castle-anim-frames line
-        output_file.write('\t\t<frame time="%f" bounding_box_center="%f %f %f" bounding_box_size="%f %f %f">\n' %
-          ((frame-frame_start) / 25.0,
-           bounding_box_center[0], bounding_box_center[1], bounding_box_center[2],
-           bounding_box_size  [0], bounding_box_size  [1], bounding_box_size  [2]))
-
-        # Old code to use our custom X3D exporter, if available.
-        # We don't maintain our custom X3D exporter for Blender 2.8 anymore.
-        #
-        # (castle_engine_x3d_loaded_default, castle_engine_x3d_loaded_state) = \
-        #     addon_utils.check('castle_engine_x3d')
-        # if castle_engine_x3d_loaded_state:
-        #     bpy.ops.castle_export_scene.x3d(filepath=x3d_file_name,
-        #         check_existing = False,
-        #         use_compress = False, # never compress
-        #         # pass through our properties to X3D exporter
-        #         use_selection              = self.use_selection,
-        #         use_mesh_modifiers         = self.use_mesh_modifiers,
-        #         use_triangulate            = self.use_triangulate,
-        #         use_normals                = self.use_normals,
-        #         use_hierarchy              = self.use_hierarchy,
-        #         name_decorations           = self.name_decorations,
-        #         use_h3d                    = self.use_h3d,
-        #         # Not in vanilla Blender exporter in Blender 2.8.
-        #         # use_common_surface_shader  = self.use_common_surface_shader,
-        #         axis_forward               = self.axis_forward,
-        #         axis_up                    = self.axis_up,
-        #         path_mode                  = self.path_mode)
-        # else:
+        temp_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.x3d")
 
         self.fix_scene_before_x3d_export(context)
 
         # write X3D with animation frame
-        bpy.ops.export_scene.x3d(filepath=x3d_file_name,
+        bpy.ops.export_scene.x3d(filepath=temp_file_name,
             check_existing = False,
             use_compress = False, # never compress
             # pass through our properties to X3D exporter
@@ -370,14 +327,93 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             path_mode                  = self.path_mode)
 
         # read from temporary X3D file, and remove it
-        with open(x3d_file_name, 'r') as x3d_contents_file:
-            x3d_contents = x3d_contents_file.read()
-        os.remove(x3d_file_name)
+        with open(temp_file_name, 'r') as temp_contents_file:
+            temp_contents = temp_contents_file.read()
+        os.remove(temp_file_name)
 
         # add X3D content
-        x3d_contents = x3d_contents.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
-        x3d_contents = x3d_contents.replace('<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">', '')
-        output_file.write(x3d_contents)
+        temp_contents = temp_contents.replace('<?xml version="1.0" encoding="UTF-8"?>', '')
+        temp_contents = temp_contents.replace('<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">', '')
+        output_file.write(temp_contents)
+
+    def output_frame_gltf(self, context, output_file):
+        """Append a given frame to output_file in glTF format."""
+
+        # Note that using glb would be more efficient,
+        # but then textures are embedded too in every frame, which are not useful.
+
+        # calculate filenames stuff
+        (output_dir, output_basename) = os.path.split(self.filepath)
+        temp_file_name = os.path.join(output_dir, os.path.splitext(output_basename)[0] + "_tmp.gltf")
+
+        bpy.ops.export_scene.gltf(filepath=temp_file_name,
+            export_format = 'GLTF_EMBEDDED',
+            check_existing = False,
+            export_lights = True,
+            export_apply = self.use_mesh_modifiers,
+            export_extras = True,
+            export_cameras = True,
+            export_selected = self.use_selection,
+            # TODO: export_yup = self.export_yup,
+
+            # Note to below settings:
+            # we will animate the whole castle-anim-frames, no need to export animation inside glTF.
+            export_current_frame = True,
+            export_animations = False,
+            # export_skins = False, # unfortunately disabling skins causes bugs in glTF exporter on armature
+            export_morph = False,
+            export_morph_normal = False,
+            export_nla_strips = False,
+            export_force_sampling = False
+            )
+
+        # read from temporary glTF file, and remove it
+        with open(temp_file_name, 'r') as temp_contents_file:
+            temp_contents = temp_contents_file.read()
+        os.remove(temp_file_name)
+
+        # add glTF content (TODO: escape XML special chars)
+        output_file.write(temp_contents)
+
+    def output_frame(self, context, output_file, frame, frame_start):
+        """Output a given frame to a single file, and add <frame...> line to
+        castle-anim-frames file.
+
+        Arguments:
+        output_file   -- the handle to write xxx.castle-anim-frames file,
+                         to add <frame...> line.
+        frame         -- current frame number.
+        frame_start   -- the start frame number, used to shift frame times
+                         such that castle-anim-frames animation starts from time = 0.0.
+        """
+
+        # set the animation frame (before calculating bounding box
+        # and making duplicates real)
+        context.scene.frame_set(frame)
+
+        if self.make_duplicates_real:
+            self.make_duplicates_real_before(context)
+
+        # calculate bounding box in world space
+        (bounding_box_center, bounding_box_size) = self.get_current_bounding_box(context)
+
+        if self.frame_format == 'GLTF':
+            mime_type = 'model/gltf+json'
+        else:
+            mime_type = 'model/x3d+vrml'
+
+        # write castle-anim-frames line
+        output_file.write('\t\t<frame time="%f" mime_type="%s" bounding_box_center="%f %f %f" bounding_box_size="%f %f %f">\n' %
+          ((frame-frame_start) / 25.0,
+           mime_type,
+           bounding_box_center[0], bounding_box_center[1], bounding_box_center[2],
+           bounding_box_size  [0], bounding_box_size  [1], bounding_box_size  [2]))
+
+        if self.frame_format == 'GLTF':
+            self.output_frame_gltf(context, output_file)
+        else:
+            self.output_frame_x3d(context, output_file)
+
         output_file.write('\n\t\t</frame>\n')
 
         if self.make_duplicates_real:
