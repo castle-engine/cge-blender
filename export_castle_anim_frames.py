@@ -407,7 +407,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         if self.frame_format == 'GLTF':
             mime_type = 'model/gltf+json'
         else:
-            mime_type = 'model/x3d+vrml'
+            mime_type = 'model/x3d+xml'
 
         # write castle-anim-frames line
         output_file.write('\t\t<frame time="%f" mime_type="%s" bounding_box_center="%f %f %f" bounding_box_size="%f %f %f">\n' %
