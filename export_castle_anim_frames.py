@@ -51,6 +51,7 @@ from bpy_extras.io_utils import (
 from bpy.props import *
 from mathutils import Vector
 import addon_utils
+import html
 
 @orientation_helper(axis_forward='Z', axis_up='Y')
 class ExportCastleAnimFrames(bpy.types.Operator):
@@ -372,7 +373,10 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             temp_contents = temp_contents_file.read()
         os.remove(temp_file_name)
 
-        # add glTF content (TODO: escape XML special chars)
+        # add glTF content
+        # Note: using quote=False, because it is not necessary to escape " and ' here,
+        # and it would cause a lot of replacements since they are used a lot in JSON.
+        temp_contents = html.escape(temp_contents, quote=False)
         output_file.write(temp_contents)
 
     def output_frame(self, context, output_file, frame, frame_start):
