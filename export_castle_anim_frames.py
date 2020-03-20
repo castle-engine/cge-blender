@@ -361,7 +361,10 @@ class ExportCastleAnimFrames(bpy.types.Operator):
             # we will animate the whole castle-anim-frames, no need to export animation inside glTF.
             export_current_frame = True,
             export_animations = False,
-            # export_skins = False, # unfortunately disabling skins causes bugs in glTF exporter on armature
+            # export_skins must be disabled, otherwise export_apply omits applying armatures.
+            # Unfortunately, causes also bugs in current glTF exporter version:
+            # https://github.com/KhronosGroup/glTF-Blender-IO/pull/991
+            export_skins = False,
             export_morph = False,
             export_morph_normal = False,
             export_nla_strips = False,
