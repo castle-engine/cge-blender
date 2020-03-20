@@ -104,7 +104,7 @@ class ExportCastleAnimFrames(bpy.types.Operator):
         description=(
             'Each static frame is recorded using another exporter, to X3D or glTF.'
         ),
-        default='GLTF'
+        default='X3D'
     )
 
     # ------------------------------------------------------------------------
